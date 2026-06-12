@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provider Dashboard - Black Rabbit</title>
+    <style>
+        body { font-family: 'Montserrat', sans-serif; padding: 20px; background: #f8f5f0; }
+        h1 { color: #2e5a2e; }
+        .job-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>🛠️ Provider Dashboard</h1>
+    <p>Welcome back! Here are new service requests near you.</p>
+    
+    <div id="jobs-list"></div>
+
+    <script>
+        async function loadJobs() {
+            const res = await fetch('http://127.0.0.1:8000/jobs/open/');
+            const jobs = await res.json();
+            
+            const container = document.getElementById('jobs-list');
+            container.innerHTML = jobs.map(job => `
+                <div class="job-card">
+                    <h3>${job.title}</h3>
+                    <p><strong>Urgency:</strong> ${job.urgency}</p>
+                    <p>${job.description}</p>
+                    <p><strong>Address:</strong> ${job.address}</p>
+                    <button onclick="acceptJob(${job.id})">Accept Job</button>
+                </div>
+            `).join('');
+        }
+
+        async function acceptJob(jobId) {
+            await fetch(`http://127.0.0.1:8000/jobs/${jobId}/status/?status=assigned`, { method: 'PUT' });
+            alert("Job accepted!");
+            loadJobs();
+        }
+
+        loadJobs();
+    </script>
+</body>
+</html>
