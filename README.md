@@ -1,2 +1,3 @@
-# BlackRabbitLandscapingApp
-Main application for Black Rabbit Landscaping business - service requests, customer management, subscriptions
+## Black Rabbit Landscaping Marketplace
+
+Connecting customers with local service providers for lawn care and more.
