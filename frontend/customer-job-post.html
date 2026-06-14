@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Post a Job - Black Rabbit</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.10.0/dist/leaflet.css" integrity="sha256-o9N1j7kV+uLr3glU6pGSH3fZ2B1u0jtTwFVY3j8D+hM=" crossorigin="" />
+    <style>
+        body { font-family: 'Montserrat', sans-serif; margin: 0; min-height: 100vh; background: #f7f4ee; color: #1f3d25; }
+        header { padding: 24px 28px 0; max-width: 1180px; margin: 0 auto; }
+        h1 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); }
+        p.subtitle { margin: 12px 0 0; color: #4f5d4a; max-width: 760px; }
+        #wrapper { display: grid; grid-template-columns: 1fr 420px; gap: 24px; max-width: 1180px; margin: 24px auto 40px; padding: 0 20px; }
+        .card { background: #fffdf8; border-radius: 24px; padding: 24px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.1); }
+        .field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+        .field label { font-weight: 600; color: #2d4a2f; }
+        .field input, .field textarea, .field select { border: 1px solid #d7d3c6; border-radius: 14px; padding: 14px 16px; font-size: 1rem; background: #ffffff; color: #2c3e50; }
+        .field textarea { min-height: 140px; resize: vertical; }
+        .row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+        button.primary { width: 100%; padding: 15px 20px; border: none; border-radius: 999px; background: #2e6d34; color: #fff; font-weight: 700; font-size: 1rem; cursor: pointer; transition: transform 150ms ease, box-shadow 150ms ease; }
+        button.primary:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(46, 109, 52, 0.2); }
+        .map-card { display: flex; flex-direction: column; gap: 18px; }
+        #map { min-height: 520px; border-radius: 24px; overflow: hidden; }
+        .note { color: #556d58; font-size: 0.96rem; line-height: 1.6; }
+        .top-links { display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px; }
+        .top-links a { color: #2e6d34; text-decoration: none; font-weight: 700; }
+        @media (max-width: 980px) { #wrapper { grid-template-columns: 1fr; } }
+        @media (max-width: 640px) { header { padding: 18px 16px 0; } #wrapper { padding: 0 16px; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="top-links"><a href="/dashboard">Provider dashboard</a></div>
+        <h1>Post a job in minutes</h1>
+        <p class="subtitle">Create work for local providers with a beautiful, simple flow. Pick a service, set the address, and drop a location pin for better match confidence.</p>
+    </header>
+
+    <div id="wrapper">
+        <div class="card">
+            <form id="job-form">
+                <div class="field">
+                    <label for="title">Job title</label>
+                    <input id="title" name="title" type="text" placeholder="Mow the front yard and edge sidewalks" required />
+                </div>
+                <div class="field">
+                    <label for="description">What needs to be done?</label>
+                    <textarea id="description" name="description" placeholder="Describe the work so providers know exactly what to expect." required></textarea>
+                </div>
+                <div class="row">
+                    <div class="field">
+                        <label for="service_type">Service type</label>
+                        <select id="service_type" name="service_type" required>
+                            <option value="Lawn Care">Lawn Care</option>
+                            <option value="Landscaping">Landscaping</option>
+                            <option value="Tree Care">Tree Care</option>
+                            <option value="Seasonal Clean-up">Seasonal Clean-up</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="urgency">When do you need it?</label>
+                        <select id="urgency" name="urgency" required>
+                            <option value="Today">Today</option>
+                            <option value="This week">This week</option>
+                            <option value="Next week">Next week</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="address">Address</label>
+                    <input id="address" name="address" type="text" placeholder="123 Maple St, Brooklyn, NY" required />
+                </div>
+                <div class="field">
+                    <label>Selected location</label>
+                    <div id="pick-coords" class="note">Click on the map to select the service location.</div>
+                </div>
+                <input id="latitude" name="latitude" type="hidden" />
+                <input id="longitude" name="longitude" type="hidden" />
+                <button type="submit" class="primary">Post job</button>
+            </form>
+        </div>
+
+        <div class="map-card card">
+            <h2>Pick the location</h2>
+            <div id="map"></div>
+            <p class="note">Selecting the exact spot helps the right provider show up faster and makes the job details more accurate.</p>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.10.0/dist/leaflet.js" integrity="sha256-c+ZQYscE/AY7HPTcTiXovxcBHt0E9yh7L1d60vC7gYw=" crossorigin=""></script>
+    <script>
+        const apiBase = window.location.origin;
+        const defaultCenter = [39.8283, -98.5795];
+        let map;
+        let marker;
+
+        function initMap() {
+            map = L.map('map').setView(defaultCenter, 4);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: '&copy; OpenStreetMap contributors',
+            }).addTo(map);
+
+            map.on('click', (event) => {
+                setMarker(event.latlng.lat, event.latlng.lng);
+            });
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const latlng = [position.coords.latitude, position.coords.longitude];
+                    map.setView(latlng, 12);
+                });
+            }
+        }
+
+        function setMarker(lat, lng) {
+            if (marker) { marker.setLatLng([lat, lng]); }
+            else { marker = L.marker([lat, lng]).addTo(map); }
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+            document.getElementById('pick-coords').textContent = `Selected: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        }
+
+        async function postJob(event) {
+            event.preventDefault();
+            const title = document.getElementById('title').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const service_type = document.getElementById('service_type').value;
+            const urgency = document.getElementById('urgency').value;
+            const address = document.getElementById('address').value.trim();
+            const latitude = document.getElementById('latitude').value || null;
+            const longitude = document.getElementById('longitude').value || null;
+
+            const body = {
+                title,
+                description,
+                service_type,
+                urgency,
+                address,
+                customer_id: 1,
+                latitude: latitude ? parseFloat(latitude) : null,
+                longitude: longitude ? parseFloat(longitude) : null,
+            };
+
+            const response = await fetch(`${apiBase}/jobs/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+
+            if (response.ok) {
+                alert('Job posted successfully. Providers will be notified.');
+                document.getElementById('job-form').reset();
+                if (marker) { map.removeLayer(marker); marker = null; }
+                document.getElementById('pick-coords').textContent = 'Click on the map to select the service location.';
+            } else {
+                alert('Failed to post job. Please try again.');
+            }
+        }
+
+        document.getElementById('job-form').addEventListener('submit', postJob);
+        initMap();
+    </script>
+</body>
+</html>

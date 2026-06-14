@@ -8,6 +8,8 @@ class JobBase(BaseModel):
     service_type: str
     urgency: str
     address: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 class JobCreate(JobBase):
     customer_id: int
@@ -16,6 +18,8 @@ class JobRead(JobBase):
     id: int
     customer_id: int
     status: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     created_at: datetime
 
     class Config:
