@@ -1,7 +1,6 @@
 from pathlib import Path
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from .database import engine, Base, SessionLocal, get_db
@@ -13,6 +12,8 @@ frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
 app = FastAPI(title="Black Rabbit Services", description="Marketplace connecting customers with local service providers", version="0.1.0")
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
+# Static mount kept for future built React dist or assets
 app.mount("/static", StaticFiles(directory=str(frontend_dir), html=True), name="static")
 
 Base.metadata.create_all(bind=engine)
@@ -65,15 +66,13 @@ def startup_event():
 
 @app.get("/")
 def read_root():
-    return {"message": "Black Rabbit Services API is running"}
+    return {
+        "message": "Black Rabbit Services API is running",
+        "note": "Use the React frontend at http://localhost:5173 (npm run dev in frontend/)"
+    }
 
-@app.get("/dashboard", response_class=FileResponse)
-def dashboard():
-    return FileResponse(frontend_dir / "provider-dashboard.html")
-
-@app.get("/post-job", response_class=FileResponse)
-def post_job():
-    return FileResponse(frontend_dir / "customer-job-post.html")
+# Legacy routes removed - the React app (Vite) now handles customer job posting and provider dashboard.
+# See frontend/ for the new native React implementation.
 
 @app.post("/jobs/", response_model=job_schema.JobRead)
 def create_job(job_data: job_schema.JobCreate, db: Session = Depends(get_db)):
