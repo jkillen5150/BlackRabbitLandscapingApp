@@ -1,53 +1,30 @@
 ## Black Rabbit Landscaping
 
-Clean native React (Vite) + FastAPI with Grok Voice API and Weather built in.
+**Clean native React + FastAPI + Grok Voice + Weather**
 
-### Prerequisites
-- Python 3.11+
-- Node 20+
+### Important: API Keys Required
 
-### Get API Keys
+You mentioned you need to purchase the Grok Voice API.
 
-**Grok Voice API (xAI)**
+**Grok Voice API (xAI):**
 1. Go to https://console.x.ai/
-2. Sign up / log in
-3. Go to API Keys and create one
-4. Add payment method (you need to purchase credits for Voice)
-5. Copy the key
+2. Sign up or log in
+3. Go to 'API Keys' section
+4. Create a new key
+5. Add a payment method / buy credits (Voice is usage-based: ~$0.05/min realtime)
+6. Copy the key (xai-...)
 
-**Weather API (OpenWeatherMap recommended)**
-1. Sign up at https://home.openweathermap.org/users/sign_up
-2. Get free API key
-3. (Optional) Upgrade for more calls later
+**Weather API (recommended):**
+- OpenWeatherMap (free tier is generous for this app)
+- Sign up at https://home.openweathermap.org/users/sign_up
+- Get key from API keys page
 
-### Setup
+Add both to backend/.env
 
-```bash
-# Backend
-git checkout clean-start
-cd backend
-cp .env.example .env
-# Edit .env with your keys
-python -m venv venv
-source venv/bin/activate  # Windows: .\venv\Scripts\activate
-pip install -r requirements.txt
-cd app
-uvicorn main:app --reload
-```
+### Run
 
-```bash
-# Frontend
-cd frontend
-npm install
-npm run dev
-```
+See instructions in previous commits or run:
+- Backend: uvicorn main:app --reload
+- Frontend: npm run dev
 
-Open http://localhost:5173
-
-### Features
-- Native React frontend (Vite)
-- Job posting with map + voice input (Grok STT)
-- Provider dashboard with map + realtime Grok Voice Agent
-- Weather info shown when picking location
-
-All voice and weather logic is built in cleanly. See code comments for extending the Voice Agent with tools.
+Voice features and weather are built in on the clean-start branch.
