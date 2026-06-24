@@ -1,34 +1,53 @@
 ## Black Rabbit Landscaping
 
-**Clean native React (Vite) + FastAPI + Grok Voice + Weather**
+Clean native React (Vite) + FastAPI with Grok Voice API and Weather built in.
 
-### Getting API Keys (Required)
+### Prerequisites
+- Python 3.11+
+- Node 20+
 
-#### 1. Grok / xAI API (Voice + Text)
-- Go to https://console.x.ai/
-- Sign up (email, Google, or X login)
-- Complete onboarding
-- Go to API Keys (https://console.x.ai/team/default/api-keys)
-- Click "Create API Key"
-- Copy the key (starts with xai-...)
-- Add payment method if needed for production use
-- Paste into backend/.env as XAI_API_KEY
+### Get API Keys
 
-Voice pricing example: ~$0.05/min realtime, very affordable to start.
+**Grok Voice API (xAI)**
+1. Go to https://console.x.ai/
+2. Sign up / log in
+3. Go to API Keys and create one
+4. Add payment method (you need to purchase credits for Voice)
+5. Copy the key
 
-#### 2. Weather API (Recommended: OpenWeatherMap)
-- Go to https://home.openweathermap.org/users/sign_up
-- Create free account
-- Get API key from https://home.openweathermap.org/api_keys
-- Paste into backend/.env as OPENWEATHER_API_KEY
-- Free tier is very generous (1M calls/month)
+**Weather API (OpenWeatherMap recommended)**
+1. Sign up at https://home.openweathermap.org/users/sign_up
+2. Get free API key
+3. (Optional) Upgrade for more calls later
 
-### Quick Start
+### Setup
 
-See previous README section for running backend and frontend.
+```bash
+# Backend
+git checkout clean-start
+cd backend
+cp .env.example .env
+# Edit .env with your keys
+python -m venv venv
+source venv/bin/activate  # Windows: .\venv\Scripts\activate
+pip install -r requirements.txt
+cd app
+uvicorn main:app --reload
+```
 
-Weather will show automatically when you pick a location on the map.
-Voice features require the XAI key.
+```bash
+# Frontend
+cd frontend
+npm install
+npm run dev
+```
 
-### .env setup
-Copy .env.example and fill in your keys.
+Open http://localhost:5173
+
+### Features
+- Native React frontend (Vite)
+- Job posting with map + voice input (Grok STT)
+- Provider dashboard with map + realtime Grok Voice Agent
+- Weather info shown when picking location
+
+All voice and weather logic is built in cleanly. See code comments for extending the Voice Agent with tools.
