@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
     yield
-    # Shutdown (nothing for now)
+    # Shutdown
 
 app = FastAPI(
     title="Black Rabbit Landscaping API",
@@ -84,7 +84,7 @@ def root():
 
 # Job endpoints - clean and focused
 @app.post("/jobs/", response_model=job_schema.JobRead)
-def create_job(job_data: job_schema.JobCreate, db: Session = get_db()):
+def create_job(job_data: job_schema.JobCreate, db: Session = Depends(get_db)):
     new_job = job.Job(**job_data.dict())
     db.add(new_job)
     db.commit()
@@ -92,15 +92,15 @@ def create_job(job_data: job_schema.JobCreate, db: Session = get_db()):
     return new_job
 
 @app.get("/jobs/")
-def list_all_jobs(db: Session = get_db()):
+def list_all_jobs(db: Session = Depends(get_db)):
     return db.query(job.Job).all()
 
 @app.get("/jobs/open/")
-def list_open_jobs(db: Session = get_db()):
+def list_open_jobs(db: Session = Depends(get_db)):
     return db.query(job.Job).filter(job.Job.status == "open").all()
 
 @app.put("/jobs/{job_id}/status/")
-def update_status(job_id: int, status: str, db: Session = get_db()):
+def update_status(job_id: int, status: str, db: Session = Depends(get_db)):
     job_obj = db.query(job.Job).filter(job.Job.id == job_id).first()
     if not job_obj:
         return {"error": "Job not found"}
