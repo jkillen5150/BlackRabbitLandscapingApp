@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import JobPostForm from './components/JobPostForm.jsx'
 import ProviderDashboard from './components/ProviderDashboard.jsx'
+import VoiceInput from './components/VoiceInput';
 
+// Inside your main return:
+<VoiceInput />
 function App() {
   const [tab, setTab] = useState('post') // 'post' | 'dashboard'
 
