@@ -1,0 +1,31 @@
+import { useEffect, useState } from 'react';
+
+export default function ProviderDashboard() {
+  const = useState([]);
+
+  useEffect(() => {
+    fetch('http://localhost:8000/jobs/open')
+      .then(r => r.json())
+      .then(data => setJobs(data.jobs || data))
+      .catch(err => console.error(err));
+  }, []);
+
+  const acceptJob = (jobId) => {
+    fetch(`http://localhost:8000/jobs/${jobId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'accepted' })
+    })
+    .then(() => {
+      alert('Job accepted! 🎉');
+      // Refresh the list
+      window.location.reload();
+    });
+  };
+
+  return (
+    <div style={{ padding: '20px' }}>
+      <h2>🛠️ Provider Dashboard</h2>
+      <p><strong>Open Jobs Available:</strong></p>
+      
+      {jobs.length === 0
