@@ -77,30 +77,32 @@ def read_root():
 @app.post("/voice/stt")
 async def voice_stt(file: UploadFile = File(...)):
     if not XAI_API_KEY:
-        raise HTTPException(400, "XAI_API_KEY not set")
-    
-    # Read audio file
+        raise HTTPException(status_code=400, detail="XAI_API_KEY not set in .env")
+
     audio_bytes = await file.read()
-    
+
     try:
-        async with httpx.AsyncClient() as client:
-            # Call xAI Grok Voice API for transcription
+        async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(
-                "https://api.x.ai/v1/audio/transcriptions",  # Check exact endpoint in xAI docs
-                headers={"Authorization": f"Bearer {XAI_API_KEY}"},
-                files={"file": (file.filename, audio_bytes, file.content_type)},
-                data={"model": "grok-voice"}  # adjust model name if needed
+                "https://api.x.ai/v1/stt",           # ← Correct current endpoint
+                headers={
+                    "Authorization": f"Bearer {XAI_API_KEY}"
+                },
+                files={
+                    "file": (file.filename or "recording.webm", audio_bytes, file.content_type or "audio/webm")
+                }
             )
-            
+
             if response.status_code == 200:
                 data = response.json()
-                transcript = data.get("text", "Could not understand")
+                # xAI usually returns {"text": "..."} or similar
+                transcript = data.get("text") or data.get("transcript") or str(data)
                 return {"transcript": transcript}
             else:
-                return {"transcript": "Error from Grok: " + response.text}
-                
+                return {"transcript": f"Grok STT error: {response.text}"}
+
     except Exception as e:
-        return {"transcript": f"Error: {str(e)}"}
+        return {"transcript": f"Error calling Grok STT: {str(e)}"}
 
 @app.get("/jobs/")
 def get_jobs(db: Session = Depends(get_db)):
