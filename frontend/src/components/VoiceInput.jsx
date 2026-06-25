@@ -16,6 +16,7 @@ export default function VoiceInput({ onJobCreated }) {
       const chunks = [];
 
       mediaRecorder.ondataavailable = e => chunks.push(e.data);
+
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(chunks, { type: 'audio/webm' });
         const formData = new FormData();
@@ -29,18 +30,24 @@ export default function VoiceInput({ onJobCreated }) {
             body: formData,
           });
           const data = await res.json();
-          setTranscript(data.transcript);
-          setStatus('Ready to create job');
+          setTranscript(data.transcript || 'No transcript received');
+          setStatus('Done');
         } catch (err) {
           setStatus('Error: ' + err.message);
         }
-        
+
         setIsRecording(false);
         stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorder.start();
-      setTimeout(() => mediaRecorder.stop(), 7000); // 7 seconds max
+
+      // Auto stop after 7 seconds
+      setTimeout(() => {
+        if (mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+        }
+      }, 7000);
 
     } catch (err) {
       setStatus('Microphone error');
@@ -50,7 +57,7 @@ export default function VoiceInput({ onJobCreated }) {
 
   const createJobFromVoice = async () => {
     if (!transcript) return;
-    
+
     const jobData = {
       title: transcript.slice(0, 60),
       description: transcript,
@@ -66,7 +73,7 @@ export default function VoiceInput({ onJobCreated }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(jobData)
       });
-      alert('✅ Job created from voice!');
+      alert('✅ Job created from your voice!');
       setTranscript('');
       setStatus('');
       if (onJobCreated) onJobCreated();
@@ -97,11 +104,11 @@ export default function VoiceInput({ onJobCreated }) {
 
       {transcript && (
         <div style={{ marginTop: '15px', padding: '15px', background: 'white', borderRadius: '8px', textAlign: 'left' }}>
-          <strong>Transcript:</strong> "{transcript}"
+          <strong>You said:</strong> "{transcript}"
           <br /><br />
           <button 
             onClick={createJobFromVoice}
-            style={{ padding: '10px 20px', background: '#3498db', color: 'white', border: 'none', borderRadius: '6px' }}
+            style={{ padding: '10px 20px', background: '#3498db', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
           >
             ✅ Create Job from this
           </button>
