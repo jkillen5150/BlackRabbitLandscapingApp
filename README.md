@@ -1,4 +1,4 @@
-## Black Rabbit Landscaping Marketplace
+## Black Rabbit Landscaping
 
 Connecting customers with local service providers for lawn care and more.
 
