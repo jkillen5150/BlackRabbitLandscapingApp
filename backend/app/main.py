@@ -74,13 +74,33 @@ def read_root():
 # Legacy routes removed - the React app (Vite) now handles customer job posting and provider dashboard.
 # See frontend/ for the new native React implementation.
 
-@app.post("/jobs/", response_model=job_schema.JobRead)
-def create_job(job_data: job_schema.JobCreate, db: Session = Depends(get_db)):
-    new_job = job.Job(**job_data.dict())
-    db.add(new_job)
-    db.commit()
-    db.refresh(new_job)
-    return new_job
+@app.post("/voice/stt")
+async def voice_stt(file: UploadFile = File(...)):
+    if not XAI_API_KEY:
+        raise HTTPException(400, "XAI_API_KEY not set")
+    
+    # Read audio file
+    audio_bytes = await file.read()
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            # Call xAI Grok Voice API for transcription
+            response = await client.post(
+                "https://api.x.ai/v1/audio/transcriptions",  # Check exact endpoint in xAI docs
+                headers={"Authorization": f"Bearer {XAI_API_KEY}"},
+                files={"file": (file.filename, audio_bytes, file.content_type)},
+                data={"model": "grok-voice"}  # adjust model name if needed
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                transcript = data.get("text", "Could not understand")
+                return {"transcript": transcript}
+            else:
+                return {"transcript": "Error from Grok: " + response.text}
+                
+    except Exception as e:
+        return {"transcript": f"Error: {str(e)}"}
 
 @app.get("/jobs/")
 def get_jobs(db: Session = Depends(get_db)):
