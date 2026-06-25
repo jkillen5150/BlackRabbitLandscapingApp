@@ -3,12 +3,14 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 export default function JobMap() {
-  const = useState([ 47.0379, -122.9015]; // Yelm area
+  const [jobs, setJobs] = useState([]);
+  const center = [47.0379, -122.9015]; // Yelm / Rainier, WA area
 
   useEffect(() => {
     fetch('http://localhost:8000/jobs')
       .then(r => r.json())
-      .then(data => setJobs(data.jobs || data));
+      .then(data => setJobs(data.jobs || data))
+      .catch(err => console.error('Failed to fetch jobs:', err));
   }, []);
 
   return (
@@ -19,7 +21,18 @@ export default function JobMap() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {jobs.map(job => (
-          <Marker key={job.id} position={ }>
+          <Marker 
+            key={job.id} 
+            position={[job.lat || 47.0379, job.lon || -122.9015]}
+          >
             <Popup>
               <strong>{job.title}</strong><br />
-              ${job.price}<br
+              ${job.price}<br />
+              {job.description}
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
+  );
+}
