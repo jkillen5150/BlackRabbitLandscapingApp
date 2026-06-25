@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 
 export default function JobMap() {
   const [jobs, setJobs] = useState([]);
-  const center = [47.0379, -122.9015]; // Yelm / Rainier, WA area
+  const center = [47.0379, -122.9015]; // Yelm / Rainier area
 
   useEffect(() => {
     fetch('http://localhost:8000/jobs')
