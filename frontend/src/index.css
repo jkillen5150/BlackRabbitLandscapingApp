@@ -1,0 +1,197 @@
+body {
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  background: #f7f4ee;
+  color: #1f3d25;
+}
+
+header {
+  padding: 24px 28px 0;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+p.subtitle {
+  margin: 12px 0 0;
+  color: #4f5d4a;
+  max-width: 760px;
+}
+
+#wrapper, #app {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 24px;
+  max-width: 1180px;
+  margin: 24px auto 40px;
+  padding: 0 20px;
+}
+
+.card {
+  background: #fffdf8;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.1);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.field label {
+  font-weight: 600;
+  color: #2d4a2f;
+}
+
+.field input,
+.field textarea,
+.field select {
+  border: 1px solid #d7d3c6;
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 1rem;
+  background: #ffffff;
+  color: #2c3e50;
+}
+
+.field textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+button.primary {
+  width: 100%;
+  padding: 15px 20px;
+  border: none;
+  border-radius: 999px;
+  background: #2e6d34;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+button.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(46, 109, 52, 0.2);
+}
+
+.map-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+#map {
+  min-height: 520px;
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.note {
+  color: #556d58;
+  font-size: 0.96rem;
+  line-height: 1.6;
+}
+
+.top-links {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.top-links a, .top-links button {
+  color: #2e6d34;
+  text-decoration: none;
+  font-weight: 700;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.tab {
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid #d7d3c6;
+  background: #fffdf8;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.tab.active {
+  background: #2e6d34;
+  color: white;
+  border-color: #2e6d34;
+}
+
+.job-card {
+  border-radius: 18px;
+  padding: 18px;
+  background: #fdfdf9;
+  box-shadow: inset 0 0 0 1px rgba(34,34,34,0.04);
+  margin-bottom: 16px;
+}
+
+.job-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  color: #213b24;
+}
+
+.job-card p {
+  margin: 3px 0;
+  color: #4d5c4e;
+  line-height: 1.55;
+}
+
+.job-card button {
+  margin-top: 14px;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: #2e6d34;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.96rem;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.empty-state {
+  text-align: center;
+  color: #6b6b6b;
+  padding: 32px 0;
+}
+
+@media (max-width: 980px) {
+  #wrapper, #app {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  header { padding: 18px 16px 0; }
+  #wrapper, #app { padding: 0 16px; }
+}
