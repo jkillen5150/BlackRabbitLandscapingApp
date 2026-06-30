@@ -1,0 +1,25 @@
+{
+  "name": "Black Rabbit Services",
+  "short_name": "Black Rabbit",
+  "description": "Local services marketplace in Yelm, WA — lawn care, handyman, window washing and more. Free to post and connect.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F4EC",
+  "theme_color": "#2D5A3D",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/images/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "lang": "en-US"
+}

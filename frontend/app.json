@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Black Rabbit Services",
+    "slug": "black-rabbit-landscaping",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "blackrabbit",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F8F4EC",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
+      }
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png",
+      "name": "Black Rabbit Services | Yelm WA",
+      "shortName": "Black Rabbit",
+      "description": "Local services marketplace — lawn care, handyman, window washing and more.",
+      "lang": "en-US",
+      "display": "standalone",
+      "scope": "/",
+      "startUrl": "/"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F8F4EC",
+          "android": {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 200
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
