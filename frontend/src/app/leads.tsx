@@ -18,7 +18,7 @@ import { api, Job } from '@/lib/api';
 import { useSession } from '@/lib/session';
 
 export default function LeadsScreen() {
-  const { session, user, signInWithPhone } = useSession();
+  const { session, user } = useSession();
   const [openLeads, setOpenLeads] = useState<Job[]>([]);
   const [myLeads, setMyLeads] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,13 +46,17 @@ export default function LeadsScreen() {
   const becomeProvider = () => {
     Alert.alert(
       'Provider sign-in',
-      'Sign in from the Profile tab with your phone number, then enable Provider mode.',
+      'Go to Profile, sign up with email verification, and enable Provider mode.',
     );
   };
 
   const claimJob = (job: Job) => {
     if (!session?.userId) {
       becomeProvider();
+      return;
+    }
+    if (!user?.email_verified) {
+      Alert.alert('Email verification required', 'Verify your email on the Profile tab first.');
       return;
     }
     if (!user?.is_provider) {

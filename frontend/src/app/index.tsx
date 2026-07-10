@@ -16,13 +16,16 @@ import { ScreenContent } from '@/components/screen-content';
 import { ScreenShell } from '@/components/screen-shell';
 import { Colors } from '@/constants/theme';
 import { api, Job } from '@/lib/api';
+import { parseVoiceRequest } from '@/lib/parse-voice-request';
 import { useSession } from '@/lib/session';
 
 const YELM_LAT = 46.9421;
 const YELM_LON = -122.6065;
+const PHONE_DIGITS = '4079511663';
 const PHONE = '(407) 951-1663';
-const PHONE_TEL = 'tel:14079511663';
-const SMS_TEL = 'sms:14079511663';
+const PHONE_E164 = `+1${PHONE_DIGITS}`;
+const PHONE_TEL = `tel:${PHONE_E164}`;
+const SMS_TEL = `sms:${PHONE_E164}`;
 
 const DEFAULT_SERVICES = ['Lawn Care', 'Landscaping', 'Window Washing', 'Handyman'];
 
@@ -39,16 +42,18 @@ interface Weather {
 }
 
 export default function PostJobScreen() {
-  const { session, signInWithPhone } = useSession();
+  const { session, signInWithPhone, user } = useSession();
   const [weather, setWeather] = useState<Weather>({ temp: null, description: 'Loading...' });
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [voiceFilledFields, setVoiceFilledFields] = useState<string[]>([]);
   const [serviceTypes, setServiceTypes] = useState<string[]>(DEFAULT_SERVICES);
   const [submitting, setSubmitting] = useState(false);
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [serviceType, setServiceType] = useState('Lawn Care');
   const [urgency, setUrgency] = useState('Today');
   const [details, setDetails] = useState('');
@@ -72,6 +77,10 @@ export default function PostJobScreen() {
       api.getCustomerJobs(session.userId).then(setRecentJobs).catch(() => {});
     }
   }, [session?.userId, showSuccess]);
+
+  useEffect(() => {
+    if (user?.address) setAddress(user.address);
+  }, [user?.address]);
 
   useEffect(() => {
     async function fetchWeather() {
@@ -115,11 +124,20 @@ export default function PostJobScreen() {
     recognition.lang = 'en-US';
     setIsListening(true);
     setTranscript('');
+    setVoiceFilledFields([]);
 
     recognition.onresult = (event: any) => {
       const spoken = event.results[0][0].transcript;
+      const parsed = parseVoiceRequest(spoken, serviceTypes);
+
       setTranscript(spoken);
-      if (!details) setDetails(spoken);
+      setDetails(parsed.details || spoken);
+      if (parsed.name) setName(parsed.name);
+      if (parsed.phone) setPhone(parsed.phone);
+      if (parsed.address) setAddress(parsed.address);
+      if (parsed.serviceType) setServiceType(parsed.serviceType);
+      if (parsed.urgency) setUrgency(parsed.urgency);
+      setVoiceFilledFields(parsed.filledFields);
       setIsListening(false);
     };
     recognition.onerror = () => {
@@ -156,20 +174,24 @@ export default function PostJobScreen() {
         await signInWithPhone(finalPhone, finalName, false);
       }
 
+      const finalAddress = address.trim() || 'Yelm, WA';
+
       await api.postJob({
         name: finalName,
         phone: finalPhone,
         service_type: serviceType,
         urgency,
         description: finalDetails,
-        address: 'Yelm, WA',
+        address: finalAddress,
       });
 
       setShowSuccess(true);
       setName('');
       setPhone('');
+      setAddress(user?.address || '');
       setDetails('');
       setTranscript('');
+      setVoiceFilledFields([]);
       setUrgency('Today');
       setTimeout(() => setShowSuccess(false), 4200);
     } catch (e: any) {
@@ -180,7 +202,13 @@ export default function PostJobScreen() {
   };
 
   const callUs = () => Linking.openURL(PHONE_TEL).catch(() => Alert.alert('Call us', PHONE));
-  const textUs = () => Linking.openURL(SMS_TEL).catch(() => Alert.alert('Text us', PHONE));
+  const textUs = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.location.href = SMS_TEL;
+      return;
+    }
+    Linking.openURL(SMS_TEL).catch(() => Alert.alert('Text us', `Message us at ${PHONE}`));
+  };
   const isFormReady = (name.trim() || phone.trim() || session) && (details.trim() || transcript.trim());
   return (
     <ScreenShell>
@@ -220,7 +248,9 @@ export default function PostJobScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Speak your request</Text>
-            <Text style={styles.sectionHint}>Just say what you need. No account required.</Text>
+            <Text style={styles.sectionHint}>
+              Say your name, address, and what you need — we'll fill the form for you.
+            </Text>
             <TouchableOpacity
               style={[styles.voiceButton, isListening && styles.voiceButtonListening]}
               onPress={isListening ? () => setIsListening(false) : startVoiceInput}
@@ -233,6 +263,11 @@ export default function PostJobScreen() {
               <View style={styles.transcriptBox}>
                 <Text style={styles.transcriptLabel}>Heard:</Text>
                 <Text style={styles.transcriptText}>{transcript}</Text>
+                {voiceFilledFields.length > 0 ? (
+                  <Text style={styles.transcriptFilled}>
+                    Auto-filled: {voiceFilledFields.join(', ')}
+                  </Text>
+                ) : null}
               </View>
             ) : null}
           </View>
@@ -279,6 +314,20 @@ export default function PostJobScreen() {
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
+              />
+            </View>
+
+            <View style={styles.field}>
+              <Text style={styles.label}>Job address</Text>
+              <Text style={styles.fieldHint}>Optional — helps providers know where to go</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="123 Main St, Yelm, WA"
+                placeholderTextColor="#8A958B"
+                value={address}
+                onChangeText={setAddress}
+                autoCapitalize="words"
+                autoComplete="street-address"
               />
             </View>
 
@@ -404,8 +453,15 @@ const styles = StyleSheet.create({
   },
   transcriptLabel: { fontSize: 12, fontWeight: '600', color: Colors.light.textSecondary, marginBottom: 4 },
   transcriptText: { fontSize: 17, color: Colors.light.text, lineHeight: 24 },
+  transcriptFilled: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.light.primary,
+    marginTop: 10,
+  },
   field: { marginBottom: 18 },
   label: { fontSize: 15, fontWeight: '600', color: Colors.light.text, marginBottom: 8 },
+  fieldHint: { fontSize: 13, color: Colors.light.textSecondary, marginTop: -4, marginBottom: 8 },
   serviceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   serviceChip: {
     backgroundColor: Colors.light.card, borderRadius: 12, borderWidth: 2,

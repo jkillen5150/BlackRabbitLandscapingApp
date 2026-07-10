@@ -28,6 +28,7 @@ export interface User {
   bio?: string;
   services_offered?: string;
   is_provider: boolean;
+  email_verified: boolean;
   avg_rating?: number;
   review_count: number;
   created_at: string;
@@ -129,8 +130,38 @@ export interface Appeal {
   created_at: string;
 }
 
+export interface EmailCodeResponse {
+  message: string;
+  email: string;
+  expires_in_minutes: number;
+  demo_mode: boolean;
+  dev_code?: string;
+}
+
+export interface EmailVerifyResponse {
+  user: User;
+  is_new_user: boolean;
+}
+
 export const api = {
   getServiceTypes: () => request<ServiceTypes>('/service-types/'),
+
+  requestEmailCode: (data: {
+    email: string;
+    name: string;
+    phone: string;
+    is_provider: boolean;
+  }) =>
+    request<EmailCodeResponse>('/auth/email/request-code', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  verifyEmailCode: (data: { email: string; code: string }) =>
+    request<EmailVerifyResponse>('/auth/email/verify', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
   getUser: (id: number) => request<User>(`/users/${id}`),
   getUserByPhone: (phone: string) => request<User>(`/users/by-phone/${encodeURIComponent(phone)}`),
@@ -227,4 +258,11 @@ export const api = {
     job_id?: number;
   }) => request<Appeal>('/appeals/', { method: 'POST', body: JSON.stringify(data) }),
   getAppeals: () => request<Appeal[]>('/appeals/'),
+
+  chatHealth: () => request<ChatHealth>('/chat/health'),
+  chat: (messages: ChatMessage[], context?: string) =>
+    request<ChatResponse>('/chat/', {
+      method: 'POST',
+      body: JSON.stringify({ messages, context }),
+    }),
 };

@@ -11,6 +11,7 @@ class User(Base):
     phone = Column(String, unique=True, index=True)
     name = Column(String)
     is_provider = Column(Boolean, default=False)
+    email_verified = Column(Boolean, default=False)
     address = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
     services_offered = Column(String, nullable=True)

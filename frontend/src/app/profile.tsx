@@ -26,9 +26,16 @@ const APPEAL_REASONS = [
 ];
 
 export default function ProfileScreen() {
-  const { session, user, setSession, signInWithPhone, refreshUser } = useSession();
+  const { session, user, setSession, signInWithEmail, refreshUser } = useSession();
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [signUpAsProvider, setSignUpAsProvider] = useState(false);
+  const [verificationStep, setVerificationStep] = useState<'details' | 'code'>('details');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [devCodeHint, setDevCodeHint] = useState<string | null>(null);
+  const [codeExpiresMinutes, setCodeExpiresMinutes] = useState(15);
   const [bio, setBio] = useState('');
   const [services, setServices] = useState('');
   const [signingIn, setSigningIn] = useState(false);
@@ -86,23 +93,64 @@ export default function ProfileScreen() {
     }, [user])
   );
 
-  const handleSignIn = async () => {
-    if (!phone.trim() || !name.trim()) {
-      Alert.alert('Enter your name and phone');
+  const handleRequestCode = async () => {
+    if (!email.trim() || !name.trim() || !phone.trim()) {
+      Alert.alert('Almost there', 'Enter your name, email, and phone.');
       return;
     }
     setSigningIn(true);
     try {
-      await signInWithPhone(phone.trim(), name.trim(), false);
+      const result = await api.requestEmailCode({
+        email: email.trim().toLowerCase(),
+        name: name.trim(),
+        phone: phone.trim(),
+        is_provider: signUpAsProvider,
+      });
+      setPendingEmail(result.email);
+      setCodeExpiresMinutes(result.expires_in_minutes);
+      setDevCodeHint(result.demo_mode && result.dev_code ? result.dev_code : null);
+      setVerificationStep('code');
+      setVerificationCode('');
     } catch (e: any) {
-      Alert.alert('Error', e.message);
+      Alert.alert('Could not send code', e.message);
     } finally {
       setSigningIn(false);
     }
   };
 
+  const handleVerifyCode = async () => {
+    if (!verificationCode.trim() || verificationCode.trim().length !== 6) {
+      Alert.alert('Enter the 6-digit code from your email');
+      return;
+    }
+    setSigningIn(true);
+    try {
+      await signInWithEmail(pendingEmail || email.trim().toLowerCase(), verificationCode.trim());
+      setVerificationStep('details');
+      setVerificationCode('');
+      setDevCodeHint(null);
+    } catch (e: any) {
+      Alert.alert('Verification failed', e.message);
+    } finally {
+      setSigningIn(false);
+    }
+  };
+
+  const resetVerification = () => {
+    setVerificationStep('details');
+    setVerificationCode('');
+    setDevCodeHint(null);
+  };
+
   const toggleProvider = async (value: boolean) => {
     if (!session) return;
+    if (value && !user?.email_verified) {
+      Alert.alert(
+        'Email verification required',
+        'Verify your email on sign-up before enabling provider mode.',
+      );
+      return;
+    }
     try {
       await api.updateUser(session.userId, { is_provider: value });
       await refreshUser();
@@ -225,17 +273,99 @@ export default function ProfileScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <ScreenContent>
           <Text style={styles.title}>Your Profile</Text>
-          <Text style={styles.subtitle}>Sign in with your phone. No password needed.</Text>
+          <Text style={styles.subtitle}>
+            Sign up or sign in with email verification. Works for customers and providers.
+          </Text>
 
-          <View style={styles.card}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor="#8A958B" />
-            <Text style={styles.label}>Phone</Text>
-            <TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="(360) 555-1234" keyboardType="phone-pad" placeholderTextColor="#8A958B" />
-            <TouchableOpacity style={styles.primaryBtn} onPress={handleSignIn} disabled={signingIn}>
-              {signingIn ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>Continue</Text>}
-            </TouchableOpacity>
-          </View>
+          {verificationStep === 'details' ? (
+            <View style={styles.card}>
+              <Text style={styles.label}>Name</Text>
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="Your name"
+                placeholderTextColor="#8A958B"
+                autoCapitalize="words"
+              />
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="you@example.com"
+                placeholderTextColor="#8A958B"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+              />
+              <Text style={styles.label}>Phone</Text>
+              <TextInput
+                style={styles.input}
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="(360) 555-1234"
+                keyboardType="phone-pad"
+                placeholderTextColor="#8A958B"
+              />
+
+              <View style={styles.switchRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.switchLabel}>Signing up as a provider</Text>
+                  <Text style={styles.switchHint}>Turn on to claim jobs and list in Pros</Text>
+                </View>
+                <Switch
+                  value={signUpAsProvider}
+                  onValueChange={setSignUpAsProvider}
+                  trackColor={{ true: Colors.light.primary }}
+                />
+              </View>
+
+              <TouchableOpacity style={styles.primaryBtn} onPress={handleRequestCode} disabled={signingIn}>
+                {signingIn ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryBtnText}>Send verification code</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Check your email</Text>
+              <Text style={styles.verifyHint}>
+                We sent a 6-digit code to {pendingEmail || email}. It expires in {codeExpiresMinutes} minutes.
+              </Text>
+              {devCodeHint ? (
+                <View style={styles.devCodeBox}>
+                  <Text style={styles.devCodeLabel}>Demo mode code</Text>
+                  <Text style={styles.devCodeValue}>{devCodeHint}</Text>
+                </View>
+              ) : null}
+              <Text style={styles.label}>Verification code</Text>
+              <TextInput
+                style={styles.input}
+                value={verificationCode}
+                onChangeText={setVerificationCode}
+                placeholder="123456"
+                placeholderTextColor="#8A958B"
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+              <TouchableOpacity style={styles.primaryBtn} onPress={handleVerifyCode} disabled={signingIn}>
+                {signingIn ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryBtnText}>Verify & continue</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.secondaryBtn} onPress={resetVerification}>
+                <Text style={styles.secondaryBtnText}>Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.linkBtn} onPress={handleRequestCode} disabled={signingIn}>
+                <Text style={styles.linkBtnText}>Resend code</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           </ScreenContent>
         </ScrollView>
       </ScreenShell>
@@ -248,7 +378,13 @@ export default function ProfileScreen() {
         <ScreenContent>
         <View style={styles.profileHeader}>
           <Text style={styles.title}>{user?.name}</Text>
+          <Text style={styles.phone}>{user?.email}</Text>
           <Text style={styles.phone}>{user?.phone}</Text>
+          {user?.email_verified ? (
+            <Text style={styles.verifiedBadge}>✓ Email verified</Text>
+          ) : (
+            <Text style={styles.unverifiedBadge}>Email not verified</Text>
+          )}
           {user?.avg_rating ? (
             <Text style={styles.rating}>★ {user.avg_rating} ({user.review_count} reviews)</Text>
           ) : (
@@ -490,6 +626,21 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 15, color: Colors.light.textSecondary, marginTop: 4, marginBottom: 20 },
   profileHeader: { marginBottom: 20 },
   phone: { fontSize: 15, color: Colors.light.textSecondary, marginTop: 2 },
+  verifiedBadge: { fontSize: 13, fontWeight: '600', color: Colors.light.success, marginTop: 8 },
+  unverifiedBadge: { fontSize: 13, fontWeight: '600', color: '#B45309', marginTop: 8 },
+  verifyHint: { fontSize: 14, color: Colors.light.textSecondary, lineHeight: 20, marginBottom: 12 },
+  devCodeBox: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+  },
+  devCodeLabel: { fontSize: 12, fontWeight: '600', color: '#92400E' },
+  devCodeValue: { fontSize: 28, fontWeight: '700', color: '#78350F', marginTop: 4, letterSpacing: 4 },
+  linkBtn: { alignItems: 'center', marginTop: 12, paddingVertical: 8 },
+  linkBtnText: { color: Colors.light.primary, fontWeight: '600', fontSize: 14 },
   rating: { fontSize: 16, fontWeight: '600', color: Colors.light.accent, marginTop: 6 },
   ratingMuted: { fontSize: 14, color: Colors.light.textSecondary, marginTop: 6 },
   card: {

@@ -6,8 +6,10 @@ const STORAGE_KEY = 'blackrabbit_session';
 interface Session {
   userId: number;
   phone: string;
+  email?: string;
   name: string;
   isProvider: boolean;
+  emailVerified: boolean;
 }
 
 interface SessionContextValue {
@@ -17,9 +19,22 @@ interface SessionContextValue {
   setSession: (s: Session | null) => void;
   refreshUser: () => Promise<void>;
   signInWithPhone: (phone: string, name: string, asProvider?: boolean) => Promise<User>;
+  signInWithEmail: (email: string, code: string) => Promise<User>;
+  establishSession: (u: User) => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
+
+function userToSession(u: User): Session {
+  return {
+    userId: u.id,
+    phone: u.phone,
+    email: u.email,
+    name: u.name,
+    isProvider: u.is_provider,
+    emailVerified: u.email_verified,
+  };
+}
 
 function loadSession(): Session | null {
   try {
@@ -51,16 +66,22 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     if (!s) setUser(null);
   }, []);
 
+  const establishSession = useCallback(
+    (u: User) => {
+      const s = userToSession(u);
+      setSession(s);
+      setUser(u);
+    },
+    [setSession]
+  );
+
   const refreshUser = useCallback(async () => {
     if (!session) return;
     try {
       const u = await api.getUser(session.userId);
       setUser(u);
-      setSessionState((prev) =>
-        prev
-          ? { ...prev, name: u.name, isProvider: u.is_provider }
-          : prev
-      );
+      setSessionState(userToSession(u));
+      saveSession(userToSession(u));
     } catch {
       setSession(null);
     }
@@ -89,22 +110,33 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       } catch {
         u = await api.createUser({ name, phone, is_provider: asProvider });
       }
-      const s: Session = {
-        userId: u.id,
-        phone: u.phone,
-        name: u.name,
-        isProvider: u.is_provider,
-      };
-      setSession(s);
-      setUser(u);
+      establishSession(u);
       return u;
     },
-    [setSession]
+    [establishSession]
+  );
+
+  const signInWithEmail = useCallback(
+    async (email: string, code: string): Promise<User> => {
+      const result = await api.verifyEmailCode({ email, code });
+      establishSession(result.user);
+      return result.user;
+    },
+    [establishSession]
   );
 
   return (
     <SessionContext.Provider
-      value={{ session, user, loading, setSession, refreshUser, signInWithPhone }}
+      value={{
+        session,
+        user,
+        loading,
+        setSession,
+        refreshUser,
+        signInWithPhone,
+        signInWithEmail,
+        establishSession,
+      }}
     >
       {children}
     </SessionContext.Provider>

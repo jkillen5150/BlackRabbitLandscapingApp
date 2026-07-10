@@ -28,6 +28,7 @@ class UserUpdate(BaseModel):
 class UserRead(UserBase):
     id: int
     is_provider: bool
+    email_verified: bool = False
     created_at: datetime
     avg_rating: Optional[float] = None
     review_count: int = 0
