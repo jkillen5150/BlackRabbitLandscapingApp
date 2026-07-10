@@ -18,7 +18,6 @@ function TabLayout() {
       <Tabs.Screen name="index" options={{ title: 'Post' }} />
       <Tabs.Screen name="pros" options={{ title: 'Pros' }} />
       <Tabs.Screen name="leads" options={{ title: 'Jobs' }} />
-      <Tabs.Screen name="chat" options={{ title: 'Grok' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   );
