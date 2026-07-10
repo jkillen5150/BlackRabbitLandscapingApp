@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Rabbit Landscaping | Yelm & Rainier WA</title>
+    <meta name="description" content="Professional lawn care, gardens & tree services in Yelm and Rainier WA. Simple. Affordable. Reliable.">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; font-family: 'Montserrat', sans-serif; background: #f8f5f0; color: #333; }
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('IMG_9650.jpeg') center/cover no-repeat;
+            color: white;
+            padding: 70px 20px 60px;
+            text-align: center;
+        }
+        .logo-circle {
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            border: 4px solid #2e5a2e;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            margin: 0 auto 25px;
+            overflow: hidden;
+            background: white;
+        }
+        .logo-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .service-request {
+            max-width: 620px;
+            margin: 0 auto;
+            padding: 50px 30px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+            margin-top: -40px;
+            position: relative;
+            z-index: 10;
+        }
+        .form-group { margin-bottom: 28px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #444; }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 16px 18px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .submit-btn {
+            background: #2e5a2e;
+            color: white;
+            border: none;
+            padding: 19px;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 14px;
+            width: 100%;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <header class="hero">
+        <div class="logo-circle">
+            <img src="Black Rabbit Logo Nu.jpg" alt="Black Rabbit Landscaping Logo">
+        </div>
+        <h1>Black Rabbit Landscaping</h1>
+        <p>Yelm • Rainier • Olympia Area</p>
+    </header>
+
+    <section class="service-request">
+        <h2>Request Service Now</h2>
+        <p style="text-align: center; color: #555; margin-bottom: 30px;">Most people just need their lawn handled fast. Tell me what you need.</p>
+
+        <form action="https://api.web3forms.com/submit" method="POST">
+            <input type="hidden" name="access_key" value="6467d992-e261-48c0-ae1e-2bc4b6cc557d">
+            <input type="hidden" name="subject" value="New Black Rabbit Service Request - Yelm WA">
+            <input type="hidden" name="_next" value="/thankyou.html">
+
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="name" required>
+            </div>
+
+            <div class="form-group">
+                <label>Phone Number <span style="color:#c00;">*</span></label>
+                <input type="tel" name="phone" required placeholder="(360) 555-1234">
+            </div>
+
+            <div class="form-group">
+                <label>Address <span class="text-gray-400 text-sm">(optional)</span></label>
+                <input type="text" name="address" placeholder="123 Main St, Yelm WA 98597">
+            </div>
+
+            <div class="form-group">
+                <label>How soon do you need service?</label>
+                <div class="urgency-buttons">
+                    <button type="button" class="urgency-btn" data-value="Today / Emergency">🚨 Today / Emergency</button>
+                    <button type="button" class="urgency-btn" data-value="This Week">This Week</button>
+                    <button type="button" class="urgency-btn" data-value="Next Week">Next Week</button>
+                    <button type="button" class="urgency-btn" data-value="Just getting a quote">Just a Quote</button>
+                </div>
+                <input type="hidden" name="urgency" id="urgency-field">
+            </div>
+
+            <div class="form-group">
+                <label>What's going on with your yard?</label>
+                <textarea name="message" rows="4" placeholder="Lawn is getting tall, company coming this weekend..."></textarea>
+            </div>
+
+            <button type="submit" class="submit-btn">Send Request</button>
+            
+            <p style="text-align: center; font-size: 0.9em; color: #666; margin-top: 18px;">I'll text you back within a few hours.</p>
+        </form>
+    </section>
+
+    <div class="contact-bar">
+        <p style="margin: 0 0 8px;"><strong>Call/Text:</strong> <a href="tel:+14079511663" style="color:#2e5a2e; font-weight:700;">(407) 951-1663</a></p>
+        <p style="margin: 0;"><a href="https://www.facebook.com/blackrabbitlawn" target="_blank" style="color:#2e5a2e;">Facebook</a></p>
+    </div>
+
+    <a href="sms:+14079511663?body=Hello%20Black%20Rabbit!" class="fab sms">💬</a>
+    <a href="tel:+14079511663" class="fab call">📞</a>
+</body>
+</html>
