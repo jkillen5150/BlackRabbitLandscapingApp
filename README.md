@@ -42,3 +42,21 @@ Monetization later might include things like an **ad-free premium** tier. Paymen
 - **Frontend**: Expo SDK 56 + React Native (web, iOS, Android)
 - **Backend**: FastAPI + SQLAlchemy (SQLite by default)
 - **Differentiator**: better customer service, less patronizing than LawnStarter/GreenPal
+
+
+### Website integration (no full rebuild)
+
+Marketing site stays separate: [BlackRabbitApp2026](https://github.com/jkillen5150/BlackRabbitApp2026) → [blackrabbitlawn.com](https://blackrabbitlawn.com).
+
+Marketplace venture repo: [black-rabbit-services](https://github.com/jkillen5150/black-rabbit-services).
+
+Point the lawn site at this app with one config line + CTAs/iframe:
+
+- Drop-in HTML: [`website-embed/snippet.html`](website-embed/snippet.html)
+- Full checklist: [`docs/WEBSITE_INTEGRATION.md`](docs/WEBSITE_INTEGRATION.md)
+
+```html
+<script>
+  window.BR_APP_URL = 'https://app.blackrabbitlawn.com'; // or your Codespace Expo URL
+</script>
+```
