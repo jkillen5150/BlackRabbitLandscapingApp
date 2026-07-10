@@ -9,7 +9,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || `Request failed (${res.status})`);
+    const detail = err.detail;
+    const message =
+      typeof detail === 'string'
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map((d: { msg?: string }) => d.msg || JSON.stringify(d)).join('; ')
+          : err.detail || `Request failed (${res.status})`;
+    throw new Error(message);
   }
   return res.json();
 }
@@ -141,6 +148,22 @@ export interface EmailCodeResponse {
 export interface EmailVerifyResponse {
   user: User;
   is_new_user: boolean;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system' | string;
+  content: string;
+}
+
+export interface ChatResponse {
+  message: ChatMessage;
+  model: string;
+}
+
+export interface ChatHealth {
+  ok: boolean;
+  model: string;
+  xai_api_key_configured: boolean;
 }
 
 export const api = {
