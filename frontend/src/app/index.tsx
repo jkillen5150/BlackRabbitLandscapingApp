@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,8 +15,7 @@ import {
 import { ScreenContent } from '@/components/screen-content';
 import { ScreenShell } from '@/components/screen-shell';
 import { Colors } from '@/constants/theme';
-import { api, Job } from '@/lib/api';
-import { parseVoiceRequest } from '@/lib/parse-voice-request';
+import { api, ChatMessage, Job } from '@/lib/api';
 import { useSession } from '@/lib/session';
 
 const YELM_LAT = 46.9421;
@@ -36,6 +35,18 @@ const URGENCY_OPTIONS = [
   { label: 'Just a Quote', value: 'Quote', icon: '💬' },
 ];
 
+const CHAT_STARTERS = [
+  'I need my lawn mowed this week in Yelm',
+  'What should I include when posting a job?',
+  'How much does lawn care usually cost around here?',
+];
+
+const HOME_CHAT_CONTEXT =
+  'You are Grok, the Black Rabbit Services assistant for Yelm/Rainier/Olympia WA. ' +
+  'Help neighbors describe lawn care and local service needs, suggest what to put in a job post, ' +
+  'and answer practical questions. Be brief, friendly, and local. If they want to post a job, ' +
+  'point them to the form below on this page.';
+
 interface Weather {
   temp: number | null;
   description: string;
@@ -44,9 +55,6 @@ interface Weather {
 export default function PostJobScreen() {
   const { session, signInWithPhone, user } = useSession();
   const [weather, setWeather] = useState<Weather>({ temp: null, description: 'Loading...' });
-  const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [voiceFilledFields, setVoiceFilledFields] = useState<string[]>([]);
   const [serviceTypes, setServiceTypes] = useState<string[]>(DEFAULT_SERVICES);
   const [submitting, setSubmitting] = useState(false);
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
@@ -58,6 +66,12 @@ export default function PostJobScreen() {
   const [urgency, setUrgency] = useState('Today');
   const [details, setDetails] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatSending, setChatSending] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [chatModel, setChatModel] = useState('grok-4.5');
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -97,6 +111,15 @@ export default function PostJobScreen() {
     fetchWeather();
   }, []);
 
+  useEffect(() => {
+    api
+      .chatHealth()
+      .then((h) => {
+        if (h.model) setChatModel(h.model);
+      })
+      .catch(() => {});
+  }, []);
+
   function getWeatherDescription(code: number): string {
     if (code === 0) return 'Clear skies';
     if (code <= 3) return 'Mainly clear';
@@ -108,59 +131,41 @@ export default function PostJobScreen() {
     return 'Cloudy';
   }
 
-  const startVoiceInput = () => {
-    const SpeechRecognitionAPI =
-      typeof window !== 'undefined' &&
-      ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+  const sendChat = useCallback(
+    async (text: string) => {
+      const content = text.trim();
+      if (!content || chatSending) return;
 
-    if (!SpeechRecognitionAPI) {
-      Alert.alert('Voice Input', 'Voice works best on Chrome or Edge. You can still type below.');
-      return;
-    }
+      const nextMessages: ChatMessage[] = [...chatMessages, { role: 'user', content }];
+      setChatMessages(nextMessages);
+      setChatInput('');
+      setChatSending(true);
+      setChatError(null);
 
-    const recognition = new SpeechRecognitionAPI();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-    setIsListening(true);
-    setTranscript('');
-    setVoiceFilledFields([]);
-
-    recognition.onresult = (event: any) => {
-      const spoken = event.results[0][0].transcript;
-      const parsed = parseVoiceRequest(spoken, serviceTypes);
-
-      setTranscript(spoken);
-      setDetails(parsed.details || spoken);
-      if (parsed.name) setName(parsed.name);
-      if (parsed.phone) setPhone(parsed.phone);
-      if (parsed.address) setAddress(parsed.address);
-      if (parsed.serviceType) setServiceType(parsed.serviceType);
-      if (parsed.urgency) setUrgency(parsed.urgency);
-      setVoiceFilledFields(parsed.filledFields);
-      setIsListening(false);
-    };
-    recognition.onerror = () => {
-      setIsListening(false);
-      Alert.alert('Voice', 'Could not hear you. Please try again or type below.');
-    };
-    recognition.onend = () => setIsListening(false);
-
-    try {
-      recognition.start();
-      setTimeout(() => { try { recognition.stop(); } catch {} }, 12000);
-    } catch {
-      setIsListening(false);
-    }
-  };
+      try {
+        const res = await api.chat(nextMessages, HOME_CHAT_CONTEXT);
+        setChatMessages([...nextMessages, res.message]);
+        if (res.model) setChatModel(res.model);
+        // If user described a job, seed the form details for one-tap posting
+        if (!details.trim() && content.length > 12) {
+          setDetails(content);
+        }
+      } catch (e) {
+        setChatError(e instanceof Error ? e.message : 'Chat failed');
+      } finally {
+        setChatSending(false);
+      }
+    },
+    [chatMessages, chatSending, details]
+  );
 
   const handleSubmit = async () => {
     if (!name.trim() && !phone.trim()) {
       Alert.alert('Almost there', 'Please enter your name or phone so we can reach you.');
       return;
     }
-    if (!details.trim() && !transcript.trim()) {
-      Alert.alert('Tell us more', 'Describe what you need or use the microphone.');
+    if (!details.trim()) {
+      Alert.alert('Tell us more', 'Describe what you need below, or ask Grok first for help.');
       return;
     }
 
@@ -168,7 +173,7 @@ export default function PostJobScreen() {
     try {
       const finalPhone = phone.trim() || session?.phone || '';
       const finalName = name.trim() || 'Neighbor';
-      const finalDetails = details.trim() || transcript.trim();
+      const finalDetails = details.trim();
 
       if (!session && finalPhone) {
         await signInWithPhone(finalPhone, finalName, false);
@@ -190,8 +195,6 @@ export default function PostJobScreen() {
       setPhone('');
       setAddress(user?.address || '');
       setDetails('');
-      setTranscript('');
-      setVoiceFilledFields([]);
       setUrgency('Today');
       setTimeout(() => setShowSuccess(false), 4200);
     } catch (e: any) {
@@ -209,7 +212,7 @@ export default function PostJobScreen() {
     }
     Linking.openURL(SMS_TEL).catch(() => Alert.alert('Text us', `Message us at ${PHONE}`));
   };
-  const isFormReady = (name.trim() || phone.trim() || session) && (details.trim() || transcript.trim());
+  const isFormReady = (name.trim() || phone.trim() || session) && details.trim();
   return (
     <ScreenShell>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
@@ -236,7 +239,7 @@ export default function PostJobScreen() {
           </View>
 
           <Text style={styles.weatherNote}>
-            Most people just need their lawn handled fast — tell us what you need.
+            Most people just need their lawn handled fast — ask Grok or post a job below.
           </Text>
 
           {showSuccess && (
@@ -247,29 +250,60 @@ export default function PostJobScreen() {
           )}
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Speak your request</Text>
+            <Text style={styles.sectionTitle}>Ask Grok</Text>
             <Text style={styles.sectionHint}>
-              Say your name, address, and what you need — we'll fill the form for you.
+              Describe what you need or get local lawn advice · {chatModel}
             </Text>
-            <TouchableOpacity
-              style={[styles.voiceButton, isListening && styles.voiceButtonListening]}
-              onPress={isListening ? () => setIsListening(false) : startVoiceInput}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.voiceIcon}>{isListening ? '🎙️' : '🎤'}</Text>
-              <Text style={styles.voiceText}>{isListening ? 'Listening…' : 'Speak Your Request'}</Text>
-            </TouchableOpacity>
-            {transcript ? (
-              <View style={styles.transcriptBox}>
-                <Text style={styles.transcriptLabel}>Heard:</Text>
-                <Text style={styles.transcriptText}>{transcript}</Text>
-                {voiceFilledFields.length > 0 ? (
-                  <Text style={styles.transcriptFilled}>
-                    Auto-filled: {voiceFilledFields.join(', ')}
-                  </Text>
-                ) : null}
+
+            <View style={styles.chatBox}>
+              {chatMessages.length === 0 ? (
+                <View style={styles.chatStarters}>
+                  {CHAT_STARTERS.map((s) => (
+                    <TouchableOpacity key={s} style={styles.chatStarter} onPress={() => sendChat(s)}>
+                      <Text style={styles.chatStarterText}>{s}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                chatMessages.map((m, i) => (
+                  <View
+                    key={`${m.role}-${i}`}
+                    style={[styles.chatBubble, m.role === 'user' ? styles.chatUser : styles.chatBot]}
+                  >
+                    <Text style={styles.chatRole}>{m.role === 'user' ? 'You' : 'Grok'}</Text>
+                    <Text style={styles.chatText}>{m.content}</Text>
+                  </View>
+                ))
+              )}
+
+              {chatSending ? (
+                <View style={styles.chatThinking}>
+                  <ActivityIndicator color={Colors.light.primary} size="small" />
+                  <Text style={styles.chatThinkingText}>Thinking…</Text>
+                </View>
+              ) : null}
+              {chatError ? <Text style={styles.chatError}>{chatError}</Text> : null}
+
+              <View style={styles.chatComposer}>
+                <TextInput
+                  style={styles.chatInput}
+                  value={chatInput}
+                  onChangeText={setChatInput}
+                  placeholder="Ask about lawn care or describe your job…"
+                  placeholderTextColor="#8A958B"
+                  multiline
+                  editable={!chatSending}
+                  onSubmitEditing={() => sendChat(chatInput)}
+                />
+                <TouchableOpacity
+                  style={[styles.chatSend, (!chatInput.trim() || chatSending) && styles.chatSendDisabled]}
+                  onPress={() => sendChat(chatInput)}
+                  disabled={!chatInput.trim() || chatSending}
+                >
+                  <Text style={styles.chatSendText}>Send</Text>
+                </TouchableOpacity>
               </View>
-            ) : null}
+            </View>
           </View>
 
           <View style={styles.section}>
@@ -356,7 +390,7 @@ export default function PostJobScreen() {
                 style={[styles.input, styles.textarea]}
                 placeholder="Mow front and back, edge driveway, trim bushes…"
                 placeholderTextColor="#8A958B"
-                value={details || transcript}
+                value={details}
                 onChangeText={setDetails}
                 multiline
                 numberOfLines={4}
@@ -440,25 +474,74 @@ const styles = StyleSheet.create({
   section: { marginBottom: 28 },
   sectionTitle: { fontSize: 21, fontWeight: '700', color: Colors.light.text, marginBottom: 6 },
   sectionHint: { fontSize: 15, color: Colors.light.textSecondary, marginBottom: 14 },
-  voiceButton: {
-    backgroundColor: Colors.light.primary, borderRadius: 24, paddingVertical: 28,
-    paddingHorizontal: 24, alignItems: 'center', minHeight: 100,
+  chatBox: {
+    backgroundColor: Colors.light.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    padding: 14,
   },
-  voiceButtonListening: { backgroundColor: '#B91C1C' },
-  voiceIcon: { fontSize: 42, marginBottom: 6 },
-  voiceText: { color: '#FFFFFF', fontSize: 22, fontWeight: '700', textAlign: 'center' },
-  transcriptBox: {
-    marginTop: 12, backgroundColor: Colors.light.backgroundElement, borderRadius: 16,
-    padding: 16, borderWidth: 1, borderColor: Colors.light.border,
+  chatStarters: { gap: 8, marginBottom: 12 },
+  chatStarter: {
+    backgroundColor: Colors.light.backgroundElement,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
-  transcriptLabel: { fontSize: 12, fontWeight: '600', color: Colors.light.textSecondary, marginBottom: 4 },
-  transcriptText: { fontSize: 17, color: Colors.light.text, lineHeight: 24 },
-  transcriptFilled: {
-    fontSize: 13,
-    fontWeight: '600',
+  chatStarterText: { fontSize: 14, color: Colors.light.text, lineHeight: 20 },
+  chatBubble: {
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 8,
+    maxWidth: '94%',
+  },
+  chatUser: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#E8F0E9',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  chatBot: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.light.backgroundElement,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  chatRole: {
+    fontSize: 11,
+    fontWeight: '700',
     color: Colors.light.primary,
-    marginTop: 10,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
+  chatText: { fontSize: 15, color: Colors.light.text, lineHeight: 21 },
+  chatThinking: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  chatThinkingText: { fontSize: 13, color: Colors.light.textSecondary },
+  chatError: { color: '#B91C1C', fontSize: 13, marginBottom: 8 },
+  chatComposer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 4 },
+  chatInput: {
+    flex: 1,
+    minHeight: 44,
+    maxHeight: 100,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: Colors.light.text,
+    backgroundColor: Colors.light.background,
+  },
+  chatSend: {
+    backgroundColor: Colors.light.primary,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  chatSendDisabled: { opacity: 0.45 },
+  chatSendText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   field: { marginBottom: 18 },
   label: { fontSize: 15, fontWeight: '600', color: Colors.light.text, marginBottom: 8 },
   fieldHint: { fontSize: 13, color: Colors.light.textSecondary, marginTop: -4, marginBottom: 8 },
