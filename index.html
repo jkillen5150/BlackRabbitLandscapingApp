@@ -15,8 +15,7 @@
             text-align: center;
         }
         .logo-circle {
-            width: 240px;
-            height: 240px;
+            width: 240px; height: 240px;
             border-radius: 50%;
             border: 4px solid #2e5a2e;
             box-shadow: 0 15px 40px rgba(0,0,0,0.5);
@@ -24,11 +23,7 @@
             overflow: hidden;
             background: white;
         }
-        .logo-circle img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+        .logo-circle img { width: 100%; height: 100%; object-fit: cover; }
         .service-request {
             max-width: 620px;
             margin: 0 auto;
@@ -62,6 +57,24 @@
             margin-top: 15px;
             cursor: pointer;
         }
+        .fab {
+            position: fixed;
+            bottom: 22px;
+            right: 22px;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 27px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            text-decoration: none;
+            z-index: 100;
+        }
+        .fab.sms { background: #25D366; color: white; bottom: 95px; }
+        .fab.call { background: #2e5a2e; color: white; }
+        .fab.grok-chat { background: #1f2937; color: white; bottom: 168px; font-size: 24px; }
     </style>
 </head>
 <body>
@@ -76,27 +89,22 @@
     <section class="service-request">
         <h2>Request Service Now</h2>
         <p style="text-align: center; color: #555; margin-bottom: 30px;">Most people just need their lawn handled fast. Tell me what you need.</p>
-
         <form action="https://api.web3forms.com/submit" method="POST">
             <input type="hidden" name="access_key" value="6467d992-e261-48c0-ae1e-2bc4b6cc557d">
             <input type="hidden" name="subject" value="New Black Rabbit Service Request - Yelm WA">
             <input type="hidden" name="_next" value="/thankyou.html">
-
             <div class="form-group">
                 <label>Full Name</label>
                 <input type="text" name="name" required>
             </div>
-
             <div class="form-group">
                 <label>Phone Number <span style="color:#c00;">*</span></label>
                 <input type="tel" name="phone" required placeholder="(360) 555-1234">
             </div>
-
             <div class="form-group">
                 <label>Address <span class="text-gray-400 text-sm">(optional)</span></label>
                 <input type="text" name="address" placeholder="123 Main St, Yelm WA 98597">
             </div>
-
             <div class="form-group">
                 <label>How soon do you need service?</label>
                 <div class="urgency-buttons">
@@ -107,24 +115,68 @@
                 </div>
                 <input type="hidden" name="urgency" id="urgency-field">
             </div>
-
             <div class="form-group">
                 <label>What's going on with your yard?</label>
                 <textarea name="message" rows="4" placeholder="Lawn is getting tall, company coming this weekend..."></textarea>
             </div>
-
             <button type="submit" class="submit-btn">Send Request</button>
-            
             <p style="text-align: center; font-size: 0.9em; color: #666; margin-top: 18px;">I'll text you back within a few hours.</p>
         </form>
     </section>
 
     <div class="contact-bar">
         <p style="margin: 0 0 8px;"><strong>Call/Text:</strong> <a href="tel:+14079511663" style="color:#2e5a2e; font-weight:700;">(407) 951-1663</a></p>
-        <p style="margin: 0;"><a href="https://www.facebook.com/blackrabbitlawn" target="_blank" style="color:#2e5a2e;">Facebook</a></p>
     </div>
 
-    <a href="sms:+14079511663?body=Hello%20Black%20Rabbit!" class="fab sms">💬</a>
+    <!-- Floating Buttons -->
+    <a href="sms:+14079511663?body=Hey,%20Black%20Rabbit!" class="fab sms">💬</a>
     <a href="tel:+14079511663" class="fab call">📞</a>
+    <button onclick="toggleChat()" class="fab grok-chat">🤖</button>
+
+    <!-- Chat Window -->
+    <div id="chat-window" style="display: none; position: fixed; bottom: 230px; right: 20px; width: 340px; height: 480px; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; z-index: 200;">
+      <div style="background: #1f2937; color: white; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+        <strong>Black Rabbit AI</strong>
+        <button onclick="toggleChat()" style="background:none; border:none; color:white; font-size:20px;">×</button>
+      </div>
+      <div id="chat-messages" style="height: 360px; overflow-y: auto; padding: 15px; background: #f8f9fa;"></div>
+      <div style="padding: 10px; border-top: 1px solid #ddd; display: flex;">
+        <input id="chat-input" type="text" placeholder="Ask about mowing, pricing..." style="flex:1; padding:10px; border:1px solid #ddd; border-radius:8px;">
+        <button onclick="sendMessage()" style="margin-left:8px; padding:10px 16px; background:#2e5a2e; color:white; border:none; border-radius:8px;">Send</button>
+      </div>
+    </div>
+
+    <script>
+        const PROXY_URL = 'https://br-chat-proxy.vercel.app/api/chat';
+
+        async function sendMessage() {
+          const input = document.getElementById('chat-input');
+          const messages = document.getElementById('chat-messages');
+          const text = input.value.trim();
+          if (!text) return;
+
+          messages.innerHTML += `<div style="margin:8px 0; text-align:right; color:#333;"><strong>You:</strong> ${text}</div>`;
+          input.value = '';
+
+          try {
+            const res = await fetch(PROXY_URL, {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ message: text })
+            });
+            const data = await res.json();
+            const reply = data.choices?.[0]?.message?.content || "Sorry, I'm having trouble. Text Jerry at (407) 951-1663!";
+            messages.innerHTML += `<div style="margin:8px 0; color:#2e5a2e;"><strong>Black Rabbit AI:</strong> ${reply}</div>`;
+          } catch(e) {
+            messages.innerHTML += `<div style="margin:8px 0; color:red;">Connection issue. Try texting Jerry.</div>`;
+          }
+          messages.scrollTop = messages.scrollHeight;
+        }
+
+        function toggleChat() {
+          const win = document.getElementById('chat-window');
+          win.style.display = win.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
 </body>
 </html>
