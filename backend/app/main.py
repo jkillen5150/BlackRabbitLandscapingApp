@@ -25,12 +25,15 @@ _BACKEND_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(_BACKEND_DIR / ".env")
 load_dotenv(_BACKEND_DIR.parent / ".env")
 
-frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
+# Fast HTML marketplace (also mirrored at repo site/ for Vercel)
+site_dir = _BACKEND_DIR / "public"
+if not site_dir.is_dir():
+    site_dir = _BACKEND_DIR.parent / "site"
 
 app = FastAPI(
     title="Black Rabbit Services",
     description="Marketplace connecting customers with local service providers",
-    version="0.5.0",
+    version="0.6.0",
 )
 
 app.add_middleware(
@@ -40,8 +43,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.mount("/static", StaticFiles(directory=str(frontend_dir), html=True), name="static")
 
 Base.metadata.create_all(bind=engine)
 
@@ -211,12 +212,14 @@ def startup_event():
         db.close()
 
 
-@app.get("/")
-def read_root():
+@app.get("/api")
+@app.get("/api/")
+def api_root():
     return {
         "message": "Black Rabbit Services API is running",
-        "version": "0.4.0",
-        "note": "Use the Expo frontend: cd frontend && npm run web",
+        "version": "0.6.0",
+        "app": "/",
+        "docs": "/docs",
     }
 
 
@@ -935,3 +938,8 @@ def get_appeals(db: Session = Depends(get_db)):
         )
     return result
 
+
+
+# Static marketplace assets (styles.css, app.js, …) — registered last so /jobs etc. win
+if site_dir.is_dir():
+    app.mount("/", StaticFiles(directory=str(site_dir), html=True), name="marketplace")

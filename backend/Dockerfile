@@ -10,8 +10,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
+COPY public ./public
 
-# SQLite file lives in /data when volume-mounted; default local path still works.
 RUN mkdir -p /data
 
 EXPOSE 8000
