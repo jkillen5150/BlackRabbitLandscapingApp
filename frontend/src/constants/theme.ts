@@ -120,4 +120,4 @@ export const MaxContentWidth = 520;
 export const APP_NAV_HEIGHT = 56;
 
 /** Routes hidden from the dock (still reachable via router) */
-export const HIDDEN_TAB_ROUTES = new Set(['pros', 'leads', 'chat']);
+export const HIDDEN_TAB_ROUTES = new Set(['pros', 'leads']);

@@ -2,9 +2,8 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-import httpx
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, inspect, text
@@ -21,21 +20,17 @@ from .schemas import payment as payment_schema
 from .schemas import provider_listing as listing_schema
 from .schemas import review as review_schema
 from .schemas import user as user_schema
-from .routers.chat import router as chat_router
 
-# Load backend/.env (and repo root) so XAI_API_KEY is found even if cwd differs
 _BACKEND_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(_BACKEND_DIR / ".env")
 load_dotenv(_BACKEND_DIR.parent / ".env")
-
-XAI_API_KEY = os.getenv("XAI_API_KEY", "")
 
 frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
 
 app = FastAPI(
     title="Black Rabbit Services",
     description="Marketplace connecting customers with local service providers",
-    version="0.4.0",
+    version="0.5.0",
 )
 
 app.add_middleware(
@@ -49,8 +44,6 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=str(frontend_dir), html=True), name="static")
 
 Base.metadata.create_all(bind=engine)
-
-app.include_router(chat_router)
 
 
 def migrate_schema():
@@ -940,36 +933,3 @@ def get_appeals(db: Session = Depends(get_db)):
         )
     return result
 
-
-# --- Voice STT ---
-
-
-@app.post("/voice/stt")
-async def voice_stt(file: UploadFile = File(...)):
-    if not XAI_API_KEY:
-        raise HTTPException(status_code=400, detail="XAI_API_KEY not set in .env")
-
-    audio_bytes = await file.read()
-
-    try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                "https://api.x.ai/v1/stt",
-                headers={"Authorization": f"Bearer {XAI_API_KEY}"},
-                files={
-                    "file": (
-                        file.filename or "recording.webm",
-                        audio_bytes,
-                        file.content_type or "audio/webm",
-                    )
-                },
-            )
-
-            if response.status_code == 200:
-                data = response.json()
-                transcript = data.get("text") or data.get("transcript") or str(data)
-                return {"transcript": transcript}
-            return {"transcript": f"Grok STT error: {response.text}"}
-
-    except Exception as e:
-        return {"transcript": f"Error calling Grok STT: {str(e)}"}

@@ -1,5 +1,5 @@
 # One-click: https://render.com/deploy?repo=https://github.com/jkillen5150/BlackRabbitLandscapingApp
-# Free web services sleep after idle; first request may be slow. No persistent disk on free.
+# Free web services sleep after idle; first request may be slow.
 
 services:
   - type: web
@@ -12,10 +12,6 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /
     envVars:
-      - key: XAI_API_KEY
-        sync: false
-      - key: XAI_CHAT_MODEL
-        value: grok-4.5
       - key: EMAIL_DEMO_MODE
         value: "true"
       - key: FRONTEND_URL

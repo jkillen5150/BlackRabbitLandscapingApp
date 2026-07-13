@@ -150,22 +150,6 @@ export interface EmailVerifyResponse {
   is_new_user: boolean;
 }
 
-export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system' | string;
-  content: string;
-}
-
-export interface ChatResponse {
-  message: ChatMessage;
-  model: string;
-}
-
-export interface ChatHealth {
-  ok: boolean;
-  model: string;
-  xai_api_key_configured: boolean;
-}
-
 export const api = {
   getServiceTypes: () => request<ServiceTypes>('/service-types/'),
 
@@ -283,11 +267,4 @@ export const api = {
     job_id?: number;
   }) => request<Appeal>('/appeals/', { method: 'POST', body: JSON.stringify(data) }),
   getAppeals: () => request<Appeal[]>('/appeals/'),
-
-  chatHealth: () => request<ChatHealth>('/chat/health'),
-  chat: (messages: ChatMessage[], context?: string) =>
-    request<ChatResponse>('/chat/', {
-      method: 'POST',
-      body: JSON.stringify({ messages, context }),
-    }),
 };

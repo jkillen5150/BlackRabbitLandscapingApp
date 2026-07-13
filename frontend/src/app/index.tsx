@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,22 +10,13 @@ import {
   Linking,
   Alert,
   KeyboardAvoidingView,
-  ActivityIndicator,
 } from 'react-native';
 import { ScreenContent } from '@/components/screen-content';
 import { ScreenShell } from '@/components/screen-shell';
 import { Button, Card, Chip, PageSubtitle, PageTitle, Pill, SectionLabel } from '@/components/ui/primitives';
 import { Colors, Radius, Spacing } from '@/constants/theme';
-import { api, ChatMessage, Job } from '@/lib/api';
-import {
-  HOME_CHAT_CONTEXT,
-  OWNER,
-  OWNER_SMS,
-  OWNER_TEL,
-  openOwnerSms,
-  ownerSmsBody,
-} from '@/lib/business';
-import { parseVoiceRequest } from '@/lib/parse-voice-request';
+import { api, Job } from '@/lib/api';
+import { OWNER, OWNER_SMS, OWNER_TEL, openOwnerSms, ownerSmsBody } from '@/lib/business';
 import { useSession } from '@/lib/session';
 
 const YELM_LAT = 46.9421;
@@ -45,12 +36,6 @@ const URGENCY_OPTIONS = [
   { label: 'This week', value: 'This Week' },
   { label: 'Next week', value: 'Next Week' },
   { label: 'Quote', value: 'Quote' },
-];
-
-const CHAT_STARTERS = [
-  'Can you mow me this week in Yelm?',
-  'Front and back, edge the driveway',
-  'What do you charge for a standard mow?',
 ];
 
 function weatherLine(code: number): string {
@@ -73,7 +58,6 @@ export default function HomeScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [submittingRoute, setSubmittingRoute] = useState<'owner' | 'open' | null>(null);
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
-  const [showForm, setShowForm] = useState(false);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -83,11 +67,6 @@ export default function HomeScreen() {
   const [details, setDetails] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [successRoute, setSuccessRoute] = useState<'owner' | 'open'>('owner');
-
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatSending, setChatSending] = useState(false);
-  const [chatError, setChatError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof document !== 'undefined') document.title = 'Black Rabbit';
@@ -133,56 +112,13 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  const applyParsedToForm = useCallback(
-    (text: string) => {
-      const parsed = parseVoiceRequest(text, serviceTypes);
-      if (parsed.serviceType) setServiceType(parsed.serviceType);
-      if (parsed.urgency) setUrgency(parsed.urgency);
-      if (parsed.address) setAddress(parsed.address);
-      if (parsed.name && !name.trim()) setName(parsed.name);
-      if (parsed.phone && !phone.trim()) setPhone(parsed.phone);
-      if (parsed.details?.trim()) {
-        setDetails((prev) =>
-          prev.trim().length > parsed.details.trim().length ? prev : parsed.details.trim()
-        );
-      } else if (text.trim().length > 12) {
-        setDetails((prev) => prev || text.trim());
-      }
-      setShowForm(true);
-    },
-    [serviceTypes, name, phone]
-  );
-
-  const sendChat = useCallback(
-    async (text: string) => {
-      const content = text.trim();
-      if (!content || chatSending) return;
-      const nextMessages: ChatMessage[] = [...chatMessages, { role: 'user', content }];
-      setChatMessages(nextMessages);
-      setChatInput('');
-      setChatSending(true);
-      setChatError(null);
-      applyParsedToForm(content);
-      try {
-        const res = await api.chat(nextMessages, HOME_CHAT_CONTEXT);
-        setChatMessages([...nextMessages, res.message]);
-      } catch (e) {
-        setChatError(e instanceof Error ? e.message : 'Chat failed');
-      } finally {
-        setChatSending(false);
-      }
-    },
-    [chatMessages, chatSending, applyParsedToForm]
-  );
-
   const handleSubmit = async (route: 'owner' | 'open') => {
     if (!name.trim() && !phone.trim() && !session) {
       Alert.alert('Almost there', 'Add your name or phone so we can reach you.');
-      setShowForm(true);
       return;
     }
     if (!details.trim()) {
-      Alert.alert('One more thing', 'Describe what you need — chat or type a short note.');
+      Alert.alert('One more thing', 'Describe what you need.');
       return;
     }
 
@@ -226,7 +162,6 @@ export default function HomeScreen() {
       setSuccessRoute(route);
       setShowSuccess(true);
       setDetails('');
-      setChatMessages([]);
       setTimeout(() => setShowSuccess(false), 5000);
     } catch (e: any) {
       Alert.alert('Could not submit', e.message || 'Please try again.');
@@ -277,7 +212,6 @@ export default function HomeScreen() {
               </Card>
             ) : null}
 
-            {/* 1 · Service */}
             <View style={styles.block}>
               <SectionLabel>Service</SectionLabel>
               <View style={styles.chipRow}>
@@ -292,132 +226,60 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* 2 · Grok */}
             <Card style={styles.block}>
-              <SectionLabel>Tell us</SectionLabel>
-              <Text style={styles.lead}>Plain English. We'll fill in the rest.</Text>
+              <SectionLabel>Your request</SectionLabel>
 
-              {chatMessages.length === 0 ? (
-                <View style={styles.starters}>
-                  {CHAT_STARTERS.map((s) => (
-                    <TouchableOpacity key={s} style={styles.starter} onPress={() => sendChat(s)}>
-                      <Text style={styles.starterText}>{s}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : (
-                <View style={styles.thread}>
-                  {chatMessages.map((m, i) => (
-                    <View
-                      key={`${m.role}-${i}`}
-                      style={[styles.bubble, m.role === 'user' ? styles.bubbleUser : styles.bubbleBot]}
-                    >
-                      <Text style={styles.bubbleText}>{m.content}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              {chatSending ? (
-                <View style={styles.thinking}>
-                  <ActivityIndicator color={Colors.light.primary} size="small" />
-                </View>
-              ) : null}
-              {chatError ? <Text style={styles.error}>{chatError}</Text> : null}
-
-              <View style={styles.composer}>
-                <TextInput
-                  style={styles.composerInput}
-                  value={chatInput}
-                  onChangeText={setChatInput}
-                  placeholder="Describe the job…"
-                  placeholderTextColor={Colors.light.muted}
-                  multiline
-                  editable={!chatSending}
-                  onSubmitEditing={() => sendChat(chatInput)}
-                />
-                <TouchableOpacity
-                  style={[styles.sendBtn, (!chatInput.trim() || chatSending) && styles.dim]}
-                  onPress={() => sendChat(chatInput)}
-                  disabled={!chatInput.trim() || chatSending}
-                >
-                  <Text style={styles.sendText}>Send</Text>
-                </TouchableOpacity>
-              </View>
-            </Card>
-
-            {/* 3 · Request */}
-            <Card style={styles.block}>
-              <View style={styles.draftHead}>
-                <View style={{ flex: 1 }}>
-                  <SectionLabel>Your request</SectionLabel>
-                  <Text style={styles.draftTitle}>
-                    {serviceType}
-                    <Text style={styles.draftMeta}> · {urgency}</Text>
-                  </Text>
-                </View>
-                <TouchableOpacity onPress={() => setShowForm((v) => !v)} hitSlop={12}>
-                  <Text style={styles.editLink}>{showForm ? 'Done' : 'Edit'}</Text>
-                </TouchableOpacity>
+              <Text style={styles.fieldLabel}>When</Text>
+              <View style={styles.chipRow}>
+                {URGENCY_OPTIONS.map((opt) => (
+                  <Chip
+                    key={opt.value}
+                    label={opt.label}
+                    selected={urgency === opt.value}
+                    onPress={() => setUrgency(opt.value)}
+                  />
+                ))}
               </View>
 
-              {details.trim() ? (
-                <Text style={styles.draftBody} numberOfLines={showForm ? undefined : 3}>
-                  {details}
-                </Text>
-              ) : (
-                <Text style={styles.draftEmpty}>Chat above or edit to add details.</Text>
-              )}
+              <Text style={styles.fieldLabel}>Name</Text>
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="Your name"
+                placeholderTextColor={Colors.light.muted}
+                autoCapitalize="words"
+              />
 
-              {showForm ? (
-                <View style={styles.form}>
-                  <Text style={styles.fieldLabel}>When</Text>
-                  <View style={styles.chipRow}>
-                    {URGENCY_OPTIONS.map((opt) => (
-                      <Chip
-                        key={opt.value}
-                        label={opt.label}
-                        selected={urgency === opt.value}
-                        onPress={() => setUrgency(opt.value)}
-                      />
-                    ))}
-                  </View>
-                  <Text style={styles.fieldLabel}>Name</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={name}
-                    onChangeText={setName}
-                    placeholder="Your name"
-                    placeholderTextColor={Colors.light.muted}
-                  />
-                  <Text style={styles.fieldLabel}>Phone</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={phone}
-                    onChangeText={setPhone}
-                    placeholder="(360) 555-1234"
-                    placeholderTextColor={Colors.light.muted}
-                    keyboardType="phone-pad"
-                  />
-                  <Text style={styles.fieldLabel}>Address</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={address}
-                    onChangeText={setAddress}
-                    placeholder="Yelm, WA"
-                    placeholderTextColor={Colors.light.muted}
-                  />
-                  <Text style={styles.fieldLabel}>Details</Text>
-                  <TextInput
-                    style={[styles.input, styles.textarea]}
-                    value={details}
-                    onChangeText={setDetails}
-                    placeholder="Mow, edge, bags…"
-                    placeholderTextColor={Colors.light.muted}
-                    multiline
-                  />
-                </View>
-              ) : null}
+              <Text style={styles.fieldLabel}>Phone</Text>
+              <TextInput
+                style={styles.input}
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="(360) 555-1234"
+                placeholderTextColor={Colors.light.muted}
+                keyboardType="phone-pad"
+              />
+
+              <Text style={styles.fieldLabel}>Address</Text>
+              <TextInput
+                style={styles.input}
+                value={address}
+                onChangeText={setAddress}
+                placeholder="Street, Yelm WA"
+                placeholderTextColor={Colors.light.muted}
+                autoCapitalize="words"
+              />
+
+              <Text style={styles.fieldLabel}>Details</Text>
+              <TextInput
+                style={[styles.input, styles.textarea]}
+                value={details}
+                onChangeText={setDetails}
+                placeholder="Mow front and back, edge driveway…"
+                placeholderTextColor={Colors.light.muted}
+                multiline
+              />
 
               <Button
                 title="Request Black Rabbit"
@@ -432,7 +294,9 @@ export default function HomeScreen() {
                 style={styles.secondaryLink}
               >
                 <Text style={[styles.secondaryLinkText, (!isFormReady || submitting) && styles.dim]}>
-                  {submitting && submittingRoute === 'open' ? 'Posting…' : 'Post for other pros instead'}
+                  {submitting && submittingRoute === 'open'
+                    ? 'Posting…'
+                    : 'Post for other pros instead'}
                 </Text>
               </TouchableOpacity>
             </Card>
@@ -501,63 +365,6 @@ const styles = StyleSheet.create({
   successBody: { marginTop: 6, fontSize: 15, color: Colors.light.text, lineHeight: 21 },
   block: { marginBottom: Spacing.five },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  lead: { fontSize: 15, color: Colors.light.textSecondary, marginBottom: Spacing.four, lineHeight: 21 },
-  starters: { gap: 8, marginBottom: Spacing.three },
-  starter: {
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.light.background,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  starterText: { fontSize: 14, color: Colors.light.text, lineHeight: 20 },
-  thread: { gap: 8, marginBottom: Spacing.three },
-  bubble: { borderRadius: Radius.md, padding: 12, maxWidth: '90%' },
-  bubbleUser: { alignSelf: 'flex-end', backgroundColor: Colors.light.softGreen },
-  bubbleBot: {
-    alignSelf: 'flex-start',
-    backgroundColor: Colors.light.background,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  bubbleText: { fontSize: 15, color: Colors.light.text, lineHeight: 21 },
-  thinking: { marginBottom: 8 },
-  error: { color: Colors.light.danger, fontSize: 13, marginBottom: 8 },
-  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  composerInput: {
-    flex: 1,
-    minHeight: 48,
-    maxHeight: 100,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    backgroundColor: Colors.light.background,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: Colors.light.text,
-  },
-  sendBtn: {
-    backgroundColor: Colors.light.primary,
-    borderRadius: Radius.pill,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  sendText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  dim: { opacity: 0.4 },
-  draftHead: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
-  draftTitle: { fontSize: 20, fontWeight: '600', color: Colors.light.text, letterSpacing: -0.3 },
-  draftMeta: { fontWeight: '400', color: Colors.light.textSecondary, fontSize: 17 },
-  editLink: { fontSize: 15, fontWeight: '600', color: Colors.light.primaryLight, marginTop: 2 },
-  draftBody: { fontSize: 15, color: Colors.light.text, lineHeight: 22, marginBottom: 8 },
-  draftEmpty: { fontSize: 14, color: Colors.light.muted, marginBottom: 8 },
-  form: {
-    marginTop: Spacing.three,
-    paddingTop: Spacing.four,
-    borderTopWidth: 1,
-    borderTopColor: Colors.light.border,
-  },
   fieldLabel: {
     fontSize: 12,
     fontWeight: '600',
@@ -577,10 +384,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.light.text,
   },
-  textarea: { minHeight: 88, textAlignVertical: 'top' },
+  textarea: { minHeight: 100, textAlignVertical: 'top' },
   primaryCta: { marginTop: Spacing.five },
   secondaryLink: { marginTop: Spacing.four, alignItems: 'center', paddingVertical: 8 },
   secondaryLinkText: { fontSize: 14, fontWeight: '500', color: Colors.light.textSecondary },
+  dim: { opacity: 0.4 },
   contactLine: {
     flexDirection: 'row',
     justifyContent: 'center',

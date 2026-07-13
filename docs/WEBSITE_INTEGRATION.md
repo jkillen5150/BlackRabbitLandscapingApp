@@ -9,7 +9,7 @@ Keep the existing lawn care marketing site HTML. Host the marketplace as its own
 | Repo | Role |
 |------|------|
 | [BlackRabbitApp2026](https://github.com/jkillen5150/BlackRabbitApp2026) | Marketing site → `blackrabbitlawn.com` |
-| [black-rabbit-services](https://github.com/jkillen5150/black-rabbit-services) | Marketplace venture (Expo + FastAPI + Grok) |
+| [black-rabbit-services](https://github.com/jkillen5150/black-rabbit-services) | Marketplace venture (Expo + FastAPI) |
 | [BlackRabbitLandscapingApp](https://github.com/jkillen5150/BlackRabbitLandscapingApp) | Active development / staging of the app |
 
 ## What was added to the marketing site
@@ -17,7 +17,7 @@ Keep the existing lawn care marketing site HTML. Host the marketplace as its own
 In `BlackRabbitApp2026/index.html`:
 
 1. `window.BR_APP_URL` — single config for where the app lives  
-2. Hero buttons → Post a job / Ask Grok  
+2. Hero buttons → Post a job / Find pros
 3. Marketplace card with CTAs + optional iframe embed  
 
 Change one line when you deploy:

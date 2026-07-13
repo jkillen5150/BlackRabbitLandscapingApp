@@ -21,7 +21,6 @@ function TabLayout() {
       {/* Reachable routes, not in dock */}
       <Tabs.Screen name="pros" options={{ href: null, title: 'Pros' }} />
       <Tabs.Screen name="leads" options={{ href: null, title: 'Jobs' }} />
-      <Tabs.Screen name="chat" options={{ href: null, title: 'Grok' }} />
     </Tabs>
   );
 }
