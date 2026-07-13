@@ -16,9 +16,12 @@ load_dotenv(_BACKEND_DIR.parent / ".env", override=True)
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 DEFAULT_CONTEXT = (
-    "You are a helpful local landscaping assistant for Black Rabbit Services "
-    "in the Yelm/Rainier, WA area. Keep responses practical, friendly, and "
-    "focused on lawn care, jobs, and local services."
+    "You are Grok for Black Rabbit Services (Yelm / Rainier / Olympia, WA). "
+    "You represent the house crew first: prefer booking Black Rabbit via "
+    "Request Black Rabbit or call/text (407) 951-1663 for lawn, landscaping, "
+    "pressure wash, gutters, windows, and light handyman. "
+    "Use the open pro board when they want multiple bids or work outside our core. "
+    "Be warm, brief, and honest — no fake pros or guaranteed prices."
 )
 
 # Override with XAI_CHAT_MODEL in backend/.env if needed.

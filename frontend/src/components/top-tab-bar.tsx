@@ -1,64 +1,72 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
+import { APP_NAV_HEIGHT, Colors, HIDDEN_TAB_ROUTES, Radius, Shadows } from '@/constants/theme';
 
-export const TOP_TAB_BAR_HEIGHT = 66;
+export const TOP_TAB_BAR_HEIGHT = APP_NAV_HEIGHT;
 
-export function TopTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+const TAB_META: Record<string, { label: string }> = {
+  index: { label: 'Home' },
+  profile: { label: 'You' },
+};
+
+type TabBarProps = {
+  state: {
+    index: number;
+    routes: { key: string; name: string }[];
+  };
+  descriptors: Record<string, { options: { title?: string } }>;
+  navigation: {
+    emit: (event: {
+      type: string;
+      target: string;
+      canPreventDefault: boolean;
+    }) => { defaultPrevented: boolean };
+    navigate: (name: string) => void;
+  };
+};
+
+/** Minimal dock — Home + You only. */
+export function TopTabBar({ state, descriptors, navigation }: TabBarProps) {
+  const routes = state.routes.filter((r) => !HIDDEN_TAB_ROUTES.has(r.name));
+  // Focus index among visible routes
+  const focusedName = state.routes[state.index]?.name;
+
   return (
-    <View style={styles.container}>
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <View style={styles.bar}>
-          <View style={styles.brandBlock}>
-            <Text style={styles.brand} numberOfLines={1}>
-              🐇 Black Rabbit
-            </Text>
-            <Text style={styles.brandSub} numberOfLines={1}>
-              Yelm, WA · Local Services
-            </Text>
-          </View>
+    <View style={styles.container} pointerEvents="box-none">
+      <SafeAreaView edges={['bottom']} style={styles.safeArea}>
+        <View style={[styles.bar, Shadows.soft]}>
+          {routes.map((route) => {
+            const meta = TAB_META[route.name] ?? {
+              label: String(descriptors[route.key]?.options?.title ?? route.name),
+            };
+            const isFocused = focusedName === route.name;
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tabsContent}
-            style={styles.tabsScroll}
-          >
-            {state.routes.map((route, index) => {
-              const { options } = descriptors[route.key];
-              const label = options.title ?? route.name;
-              const isFocused = state.index === index;
-
-              return (
-                <TouchableOpacity
-                  key={route.key}
-                  accessibilityRole="button"
-                  accessibilityState={isFocused ? { selected: true } : {}}
-                  onPress={() => {
-                    const event = navigation.emit({
-                      type: 'tabPress',
-                      target: route.key,
-                      canPreventDefault: true,
-                    });
-                    if (!isFocused && !event.defaultPrevented) {
-                      navigation.navigate(route.name);
-                    }
-                  }}
-                  style={[styles.tab, isFocused && styles.tabFocused]}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={[styles.tabLabel, isFocused && styles.tabLabelFocused]}
-                    numberOfLines={1}
-                  >
-                    {label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+            return (
+              <TouchableOpacity
+                key={route.key}
+                accessibilityRole="button"
+                accessibilityState={isFocused ? { selected: true } : {}}
+                accessibilityLabel={meta.label}
+                onPress={() => {
+                  const event = navigation.emit({
+                    type: 'tabPress',
+                    target: route.key,
+                    canPreventDefault: true,
+                  });
+                  if (!isFocused && !event.defaultPrevented) {
+                    navigation.navigate(route.name);
+                  }
+                }}
+                style={[styles.tab, isFocused && styles.tabFocused]}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.tabLabel, isFocused && styles.tabLabelFocused]}>
+                  {meta.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </SafeAreaView>
     </View>
@@ -68,74 +76,44 @@ export function TopTabBar({ state, descriptors, navigation }: BottomTabBarProps)
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 0,
     left: 0,
     right: 0,
+    bottom: 0,
     zIndex: 100,
-    backgroundColor: Colors.light.card,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light.border,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
   },
   safeArea: {
-    backgroundColor: Colors.light.card,
+    backgroundColor: 'transparent',
   },
   bar: {
+    marginHorizontal: 20,
+    marginBottom: Platform.OS === 'web' ? 16 : 8,
+    backgroundColor: Colors.light.card,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: TOP_TAB_BAR_HEIGHT,
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-    gap: 12,
-  },
-  brandBlock: {
-    flexShrink: 0,
-    maxWidth: 150,
-  },
-  brand: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.light.primary,
-    letterSpacing: -0.2,
-  },
-  brandSub: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: Colors.light.textSecondary,
-    marginTop: 2,
-  },
-  tabsScroll: {
-    flex: 1,
-    flexGrow: 1,
-  },
-  tabsContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 8,
-    paddingLeft: 4,
-    minWidth: '100%',
+    padding: 4,
+    minHeight: APP_NAV_HEIGHT - 8,
   },
   tab: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    flexShrink: 0,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: Radius.pill,
   },
   tabFocused: {
-    backgroundColor: '#E8F0E9',
+    backgroundColor: Colors.light.primary,
   },
   tabLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: Colors.light.textSecondary,
+    color: Colors.light.muted,
+    letterSpacing: 0.2,
   },
   tabLabelFocused: {
-    color: Colors.light.primary,
+    color: Colors.light.onPrimary,
     fontWeight: '700',
   },
 });

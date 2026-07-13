@@ -14,23 +14,30 @@ Built for adults: simple job posting, free exchange, mutual reviews, and a recon
 - Weather for Yelm, WA on the home screen
 - Expo web + iOS/Android ready
 
-### Run it
+### Run it (local / Codespace)
 
 **Terminal 1 — Backend API**
 ```bash
 cd backend
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
+# optional demo Pros/Jobs data:
+python seed_demo.py
 ```
 
 **Terminal 2 — Frontend**
 ```bash
 cd frontend
 npm install
+# Codespace: set EXPO_PUBLIC_API_URL to your forwarded :8000 HTTPS URL
 npm run web
 ```
 
-Open **http://localhost:8081** (Expo web). The app talks to the API at `http://localhost:8000`.
+Open **http://localhost:8081** (Expo web). The app talks to the API at `EXPO_PUBLIC_API_URL` (default `http://localhost:8000`).
+
+### Go live (always-on)
+
+See **[`docs/DEPLOY.md`](docs/DEPLOY.md)** — Render/Railway for the API, Vercel for Expo web, then point `BR_APP_URL` on blackrabbitlawn.com.
 
 ### Free exchange (for now)
 

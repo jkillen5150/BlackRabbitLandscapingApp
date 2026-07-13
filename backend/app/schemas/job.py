@@ -23,6 +23,8 @@ class JobPostRequest(BaseModel):
     address: str = "Yelm, WA"
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    # "owner" = house crew lead (not shown on open board); "open" = marketplace
+    route: Optional[str] = "open"
 
 
 class JobCreate(JobBase):

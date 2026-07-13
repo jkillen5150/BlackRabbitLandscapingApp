@@ -358,19 +358,29 @@ def post_job(payload: job_schema.JobPostRequest, db: Session = Depends(get_db)):
             db_customer.address = payload.address
         db.commit()
 
-    title = payload.description[:60] + ("..." if len(payload.description) > 60 else "")
+    route = (payload.route or "open").strip().lower()
+    if route not in ("open", "owner"):
+        raise HTTPException(status_code=400, detail='route must be "open" or "owner"')
+
+    desc = payload.description.strip()
+    if route == "owner" and not desc.upper().startswith("[BLACK RABBIT DIRECT]"):
+        desc = f"[BLACK RABBIT DIRECT] {desc}"
+
+    title = desc[:60] + ("..." if len(desc) > 60 else "")
+    # owner_direct = house lead (hidden from open pros board)
+    status = "owner_direct" if route == "owner" else "open"
 
     db_job = job.Job(
         customer_id=db_customer.id,
         title=title,
-        description=payload.description,
+        description=desc,
         service_type=payload.service_type,
         urgency=payload.urgency,
         address=payload.address,
         lead_price=SERVICE_TIERS[payload.service_type],
         latitude=payload.latitude,
         longitude=payload.longitude,
-        status="open",
+        status=status,
     )
     db.add(db_job)
     db.commit()

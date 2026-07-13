@@ -10,9 +10,11 @@ import {
   Linking,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { BackHeader } from '@/components/back-header';
 import { ScreenContent } from '@/components/screen-content';
 import { ScreenShell } from '@/components/screen-shell';
-import { Colors } from '@/constants/theme';
+import { Card, PageSubtitle, PageTitle, Pill } from '@/components/ui/primitives';
+import { Colors, Radius, Spacing } from '@/constants/theme';
 import { api, ProviderListing } from '@/lib/api';
 
 export default function ProsScreen() {
@@ -30,51 +32,54 @@ export default function ProsScreen() {
     }
   }, []);
 
-  useFocusEffect(useCallback(() => { loadListings(); }, [loadListings]));
+  useFocusEffect(
+    useCallback(() => {
+      loadListings();
+    }, [loadListings])
+  );
 
   return (
     <ScreenShell>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={loadListings} />}
       >
         <ScreenContent>
-        <Text style={styles.title}>Find a Pro</Text>
-        <Text style={styles.subtitle}>
-          Local providers listing their services. Contact them directly — it's free.
-        </Text>
+          <BackHeader />
+          <PageTitle>Find a pro</PageTitle>
+          <PageSubtitle>Local providers. Call them free.</PageSubtitle>
 
-        {loading && listings.length === 0 ? (
-          <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 40 }} />
-        ) : listings.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>👷</Text>
-            <Text style={styles.emptyText}>No listings yet. Providers can add one in Profile.</Text>
-          </View>
-        ) : (
-          listings.map((listing) => (
-            <View key={listing.id} style={styles.card}>
-              <Text style={styles.serviceType}>{listing.service_type}</Text>
-              <Text style={styles.providerName}>{listing.provider_name}</Text>
-              {listing.avg_rating ? (
-                <Text style={styles.rating}>★ {listing.avg_rating} ({listing.review_count} reviews)</Text>
-              ) : null}
-
-              <Text style={styles.listingTitle}>{listing.title}</Text>
-              <Text style={styles.description}>{listing.description}</Text>
-              <Text style={styles.area}>📍 {listing.service_area}</Text>
-
-              {listing.provider_phone ? (
-                <TouchableOpacity
-                  style={styles.contactBox}
-                  onPress={() => Linking.openURL(`tel:${listing.provider_phone!.replace(/\D/g, '')}`)}
-                >
-                  <Text style={styles.contactPhone}>📞 {listing.provider_phone}</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          ))
-        )}
+          {loading && listings.length === 0 ? (
+            <ActivityIndicator color={Colors.light.primary} style={{ marginTop: 40 }} />
+          ) : listings.length === 0 ? (
+            <Card style={{ marginTop: 24 }}>
+              <Text style={styles.emptyTitle}>Quiet for now</Text>
+              <Text style={styles.emptyText}>
+                Pros list themselves under You. Or request Black Rabbit from Home.
+              </Text>
+            </Card>
+          ) : (
+            listings.map((listing) => (
+              <Card key={listing.id} style={styles.card}>
+                <Pill tone="green">{listing.service_type}</Pill>
+                <Text style={styles.name}>{listing.provider_name}</Text>
+                <Text style={styles.title}>{listing.title}</Text>
+                <Text style={styles.desc}>{listing.description}</Text>
+                <Text style={styles.area}>{listing.service_area}</Text>
+                {listing.provider_phone ? (
+                  <TouchableOpacity
+                    style={styles.call}
+                    onPress={() =>
+                      Linking.openURL(`tel:${listing.provider_phone!.replace(/\D/g, '')}`)
+                    }
+                  >
+                    <Text style={styles.callText}>Call {listing.provider_phone}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </Card>
+            ))
+          )}
         </ScreenContent>
       </ScrollView>
     </ScreenShell>
@@ -82,25 +87,30 @@ export default function ProsScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { padding: 20, paddingBottom: 60 },
-  title: { fontSize: 28, fontWeight: '700', color: Colors.light.primary },
-  subtitle: { fontSize: 15, color: Colors.light.textSecondary, marginTop: 4, marginBottom: 16 },
-  empty: { alignItems: 'center', paddingVertical: 48 },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyText: { fontSize: 16, color: Colors.light.textSecondary, textAlign: 'center' },
-  card: {
-    backgroundColor: Colors.light.card, borderRadius: 16, padding: 18, marginBottom: 14,
-    borderWidth: 1, borderColor: Colors.light.border,
+  scroll: {
+    paddingHorizontal: Spacing.five,
+    paddingTop: Spacing.four,
+    paddingBottom: Spacing.seven,
   },
-  serviceType: { fontSize: 13, fontWeight: '600', color: Colors.light.primaryLight },
-  providerName: { fontSize: 20, fontWeight: '700', color: Colors.light.text, marginTop: 2 },
-  rating: { fontSize: 14, color: Colors.light.accent, marginTop: 4 },
-  listingTitle: { fontSize: 16, fontWeight: '600', color: Colors.light.text, marginTop: 12 },
-  description: { fontSize: 15, color: Colors.light.text, lineHeight: 22, marginTop: 6 },
-  area: { fontSize: 13, color: Colors.light.textSecondary, marginTop: 10 },
-  contactBox: {
-    marginTop: 14, backgroundColor: '#E8F0E9', borderRadius: 12, padding: 14,
-    borderWidth: 1, borderColor: Colors.light.primary, alignItems: 'center',
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: Colors.light.text, marginBottom: 8 },
+  emptyText: { fontSize: 15, color: Colors.light.textSecondary, lineHeight: 22 },
+  card: { marginTop: Spacing.four },
+  name: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: Colors.light.text,
+    marginTop: 12,
+    letterSpacing: -0.3,
   },
-  contactPhone: { fontSize: 18, fontWeight: '700', color: Colors.light.primary },
+  title: { fontSize: 16, fontWeight: '500', color: Colors.light.text, marginTop: 8 },
+  desc: { fontSize: 15, color: Colors.light.textSecondary, lineHeight: 22, marginTop: 6 },
+  area: { fontSize: 13, color: Colors.light.muted, marginTop: 12 },
+  call: {
+    marginTop: 16,
+    backgroundColor: Colors.light.primary,
+    borderRadius: Radius.pill,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  callText: { color: '#fff', fontWeight: '600', fontSize: 15 },
 });

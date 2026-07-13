@@ -1,0 +1,29 @@
+# Deploy backend on Render: https://render.com
+# 1. New → Blueprint → connect this repo
+# 2. Set env vars in the dashboard (never commit secrets)
+# 3. After API is live, deploy frontend on Vercel with EXPO_PUBLIC_API_URL
+
+services:
+  - type: web
+    name: black-rabbit-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: XAI_API_KEY
+        sync: false
+      - key: XAI_CHAT_MODEL
+        value: grok-4.5
+      - key: EMAIL_DEMO_MODE
+        value: "true"
+      - key: FRONTEND_URL
+        sync: false
+      - key: DATABASE_URL
+        value: sqlite:////var/data/blackrabbit.db
+    disk:
+      name: br-data
+      mountPath: /var/data
+      sizeGB: 1

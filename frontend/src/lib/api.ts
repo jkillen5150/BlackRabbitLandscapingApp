@@ -208,6 +208,8 @@ export const api = {
     urgency: string;
     description: string;
     address?: string;
+    /** owner = house crew lead; open = marketplace board */
+    route?: 'owner' | 'open';
   }) => request<Job>('/jobs/post', { method: 'POST', body: JSON.stringify(data) }),
 
   getOpenJobs: () => request<Job[]>('/jobs/open/'),
