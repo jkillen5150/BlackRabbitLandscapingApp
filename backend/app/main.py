@@ -431,7 +431,9 @@ def claim_job(
     provider = db.query(user.User).filter(user.User.id == payload.provider_id).first()
     if not provider:
         raise HTTPException(status_code=404, detail="Provider not found")
-    email_auth.require_verified_user(provider, for_provider=True)
+    # Free board: phone + provider flag is enough (Craigslist speed). Email verify optional later.
+    if not provider.is_provider:
+        raise HTTPException(status_code=403, detail="Enable provider mode first.")
 
     return fulfillment.claim_job(db, db_job, payload.provider_id)
 

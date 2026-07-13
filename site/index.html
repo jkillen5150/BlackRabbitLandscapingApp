@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1E3932" />
+  <meta name="description" content="Black Rabbit — free local jobs board for Yelm, Rainier, Olympia. Post work, claim jobs, call pros." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Black Rabbit</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐇</text></svg>" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="top">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">🐇</span>
+        <div>
+          <strong>Black Rabbit</strong>
+          <span class="sub">Yelm · Rainier · Olympia</span>
+        </div>
+      </div>
+      <button type="button" class="linkish" id="btn-refresh" title="Refresh">↻</button>
+    </header>
+
+    <main id="main">
+      <!-- BOARD -->
+      <section class="view active" id="view-board" data-view="board">
+        <div class="hero-line">
+          <h1>Open jobs</h1>
+          <p>Free board. Claim work. We take a small cut when it connects — you keep the rest.</p>
+        </div>
+        <div class="filters" id="board-filters"></div>
+        <div id="board-list" class="list">
+          <div class="skeleton"></div>
+          <div class="skeleton"></div>
+        </div>
+      </section>
+
+      <!-- POST -->
+      <section class="view" id="view-post" data-view="post">
+        <div class="hero-line">
+          <h1>Post a job</h1>
+          <p>Free for neighbors. Pros see it and reach out.</p>
+        </div>
+        <form id="post-form" class="card form">
+          <label>Service
+            <select id="f-service" required></select>
+          </label>
+          <label>When
+            <select id="f-urgency">
+              <option value="Today">Today</option>
+              <option value="This Week" selected>This week</option>
+              <option value="Next Week">Next week</option>
+              <option value="Quote">Just a quote</option>
+            </select>
+          </label>
+          <label>Your name
+            <input id="f-name" type="text" autocomplete="name" placeholder="Alex" required />
+          </label>
+          <label>Phone
+            <input id="f-phone" type="tel" autocomplete="tel" placeholder="(360) 555-1234" required />
+          </label>
+          <label>Where
+            <input id="f-address" type="text" autocomplete="street-address" placeholder="Yelm, WA" />
+          </label>
+          <label>What's the job?
+            <textarea id="f-details" rows="4" placeholder="Mow front & back, edge driveway…" required></textarea>
+          </label>
+          <button type="submit" class="btn primary" id="f-submit">Post free — go live</button>
+          <p class="fine">No account required. Pros contact you direct.</p>
+        </form>
+        <div id="post-success" class="card success hidden"></div>
+      </section>
+
+      <!-- PROS -->
+      <section class="view" id="view-pros" data-view="pros">
+        <div class="hero-line">
+          <h1>Find a pro</h1>
+          <p>Local listings. Call free — no middleman tax on the call.</p>
+        </div>
+        <div id="pros-list" class="list">
+          <div class="skeleton"></div>
+        </div>
+      </section>
+
+      <!-- ME -->
+      <section class="view" id="view-me" data-view="me">
+        <div class="hero-line">
+          <h1>You</h1>
+          <p>Pro tools & your posts. Still free to use.</p>
+        </div>
+        <div class="card form" id="me-card">
+          <label>Name
+            <input id="me-name" type="text" autocomplete="name" placeholder="Your name" />
+          </label>
+          <label>Phone
+            <input id="me-phone" type="tel" autocomplete="tel" placeholder="(360) 555-1234" />
+          </label>
+          <label class="check">
+            <input id="me-provider" type="checkbox" />
+            <span>I'm a pro — let me claim jobs</span>
+          </label>
+          <button type="button" class="btn primary" id="me-save">Save</button>
+          <button type="button" class="btn ghost" id="me-clear">Sign out</button>
+        </div>
+        <div id="me-jobs" class="list"></div>
+        <div class="card mute">
+          <strong>How we make money</strong>
+          <p>Posting, browsing, and calling are free. When a pro claims a lead, we take a small cut — like Craigslist meets a modern app. No dark patterns.</p>
+        </div>
+        <p class="fine center">
+          <a href="tel:+14079511663">Call Black Rabbit (407) 951-1663</a>
+        </p>
+      </section>
+    </main>
+
+    <nav class="dock" aria-label="Main">
+      <button type="button" class="dock-btn active" data-go="board">
+        <span class="ico">☰</span><span>Board</span>
+      </button>
+      <button type="button" class="dock-btn" data-go="post">
+        <span class="ico">＋</span><span>Post</span>
+      </button>
+      <button type="button" class="dock-btn" data-go="pros">
+        <span class="ico">★</span><span>Pros</span>
+      </button>
+      <button type="button" class="dock-btn" data-go="me">
+        <span class="ico">○</span><span>You</span>
+      </button>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <!-- Set your Render API URL before deploy (or leave for same-origin / query) -->
+  <script>
+    // Production: set this to your Render URL (no trailing slash)
+    window.BR_API_URL = window.BR_API_URL || '';
+  </script>
+  <script src="./app.js" defer></script>
+</body>
+</html>

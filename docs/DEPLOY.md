@@ -4,44 +4,37 @@
 
 | Piece | Host | URL |
 |--------|------|-----|
-| API (FastAPI) | Render / Railway / Fly | `https://api.blackrabbitlawn.com` |
-| Web app (Expo export) | Vercel | `https://app.blackrabbitlawn.com` |
+| API (FastAPI) | Render | `https://….onrender.com` |
+| Web (static HTML PWA) | Vercel | `https://….vercel.app` |
 | Marketing | existing site | `https://blackrabbitlawn.com` |
 
-## 1. Backend (always-on)
+## 1. Backend
 
-### Render
+[Render Blueprint](https://render.com/deploy?repo=https://github.com/jkillen5150/BlackRabbitLandscapingApp)  
+or Web Service from `backend/` → `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
-1. Push this repo to GitHub.
-2. [Render Blueprint](https://render.com/deploy?repo=https://github.com/jkillen5150/BlackRabbitLandscapingApp) or New Web Service → `backend/`.
-3. Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-4. Optional: set `FRONTEND_URL` to your Vercel URL.
+## 2. Site (fast HTML)
 
-### Important about data
+Vercel serves the `site/` folder (`vercel.json`).
 
-Free hosts may wipe ephemeral disks. For real traffic, move to **Postgres**.
-
-## 2. Frontend (Vercel)
-
-1. Import the GitHub repo in [Vercel](https://vercel.com).
-2. Root = repo root (`vercel.json`).
-3. Env:
-
-```
-EXPO_PUBLIC_API_URL=https://YOUR-API-HOST
-```
-
-## 3. Point the lawn site
+In `site/index.html` set:
 
 ```html
-<script>
-  window.BR_APP_URL = 'https://YOUR-VERCEL-APP.vercel.app';
-</script>
+<script>window.BR_API_URL = 'https://YOUR-RENDER-URL';</script>
+```
+
+Redeploy Vercel after changing that line.
+
+## 3. Marketing
+
+```html
+<script>window.BR_APP_URL = 'https://YOUR-VERCEL-APP.vercel.app';</script>
 ```
 
 ## Checklist
 
-- [ ] API `/` returns OK
-- [ ] Frontend loads Home
-- [ ] Post a job / Request Black Rabbit works
-- [ ] Pros / Jobs reachable from You
+- [ ] API `/` OK  
+- [ ] Board loads open jobs  
+- [ ] Post free job  
+- [ ] Claim as pro (You → enable pro)  
+- [ ] Install PWA on phone (Add to Home Screen)

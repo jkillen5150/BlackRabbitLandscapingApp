@@ -1,76 +1,51 @@
 # Black Rabbit Services
 
-**Open marketplace** connecting customers with local service providers — starting with lawn care, expanding to window washing, handyman, and more.
+**Fast local jobs board** for Yelm / Rainier / Olympia — Craigslist speed, phone-app feel.
 
-Built for adults: simple job posting, free exchange, mutual reviews, and a reconciliation process instead of instant bans.
+Post work free. Pros claim free. **We take a small cut when a lead connects.** Fun to use, no dark patterns.
 
-### Key features
-- **Customer flow**: voice or form job posting — no account required
-- **Provider flow**: browse open jobs and claim them for free
-- **Pros directory**: providers list their services — customers contact them directly
-- **Mutual reviews** after job completion
-- **Appeals process** for disputes — reviewed by humans, not auto-banned
-- **Minimal profiles** with optional provider mode
-- Weather for Yelm, WA on the home screen
-- Expo web + iOS/Android ready
+### Product
+| Who | What |
+|-----|------|
+| **Neighbor** | Post a job in 30 seconds |
+| **Pro** | Browse the board, claim, call the customer |
+| **Black Rabbit** | Small lead cut on connect — platform stays free to use |
 
-### Run it (local / Codespace)
+### The app (primary UI)
 
-**Terminal 1 — Backend API**
+Zero-build HTML PWA in [`site/`](site/) — no React required to ship.
+
 ```bash
-cd backend
-pip install -r requirements.txt
+# Terminal 1 — API
+cd backend && pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
-# optional demo Pros/Jobs data:
-python seed_demo.py
+python seed_demo.py   # optional sample jobs/pros
+
+# Terminal 2 — static site
+cd site && python3 -m http.server 5173
+# open http://localhost:5173
 ```
 
-**Terminal 2 — Frontend**
-```bash
-cd frontend
-npm install
-# Codespace: set EXPO_PUBLIC_API_URL to your forwarded :8000 HTTPS URL
-npm run web
-```
-
-Open **http://localhost:8081** (Expo web). The app talks to the API at `EXPO_PUBLIC_API_URL` (default `http://localhost:8000`).
-
-### Go live (always-on)
-
-See **[`docs/DEPLOY.md`](docs/DEPLOY.md)**.
-
-**1. API (Render)** — [Deploy to Render](https://render.com/deploy?repo=https://github.com/jkillen5150/BlackRabbitLandscapingApp)
-
-**2. Web (Vercel)** — [Import this repo on Vercel](https://vercel.com/new/clone?repository-url=https://github.com/jkillen5150/BlackRabbitLandscapingApp)  
-Set env: `EXPO_PUBLIC_API_URL=https://YOUR-RENDER-URL` (no trailing slash).
-
-**3. Marketing** — set `window.BR_APP_URL` to your Vercel URL.
-
-### Free exchange (for now)
-
-Everything is free — post jobs, claim jobs, browse pros, call providers. No lead fees, no paywalls.
-
-Monetization later might include things like an **ad-free premium** tier. Payment/Stripe code exists in the backend but is not wired into the UI.
-
-### Tech
-- **Frontend**: Expo SDK 56 + React Native (web, iOS, Android)
-- **Backend**: FastAPI + SQLAlchemy (SQLite by default)
-- **Differentiator**: better customer service, less patronizing than LawnStarter/GreenPal
-
-
-### Website integration (no full rebuild)
-
-Marketing site stays separate: [BlackRabbitApp2026](https://github.com/jkillen5150/BlackRabbitApp2026) → [blackrabbitlawn.com](https://blackrabbitlawn.com).
-
-Marketplace venture repo: [black-rabbit-services](https://github.com/jkillen5150/black-rabbit-services).
-
-Point the lawn site at this app with one config line + CTAs/iframe:
-
-- Drop-in HTML: [`website-embed/snippet.html`](website-embed/snippet.html)
-- Full checklist: [`docs/WEBSITE_INTEGRATION.md`](docs/WEBSITE_INTEGRATION.md)
+Set API URL (production):
 
 ```html
-<script>
-  window.BR_APP_URL = 'https://app.blackrabbitlawn.com'; // or your Codespace Expo URL
-</script>
+<script>window.BR_API_URL = 'https://YOUR-API.onrender.com';</script>
 ```
+
+### Go live
+
+**1. API** — [Render](https://render.com/deploy?repo=https://github.com/jkillen5150/BlackRabbitLandscapingApp)  
+
+**2. Site** — [Vercel](https://vercel.com/new/clone?repository-url=https://github.com/jkillen5150/BlackRabbitLandscapingApp)  
+(serves `site/` via `vercel.json`)  
+Then set `window.BR_API_URL` in `site/index.html` to the Render URL and redeploy.
+
+Details: [`docs/DEPLOY.md`](docs/DEPLOY.md) · [`site/README.md`](site/README.md)
+
+### Tech
+- **Web**: plain HTML / CSS / JS PWA (`site/`)
+- **API**: FastAPI + SQLite (Postgres later)
+- **Legacy Expo app**: still in `frontend/` if you want native later
+
+### Marketing site
+Point CTAs at the Vercel URL — [`website-embed/snippet.html`](website-embed/snippet.html)
