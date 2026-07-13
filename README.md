@@ -37,7 +37,15 @@ Open **http://localhost:8081** (Expo web). The app talks to the API at `EXPO_PUB
 
 ### Go live (always-on)
 
-See **[`docs/DEPLOY.md`](docs/DEPLOY.md)** — Render/Railway for the API, Vercel for Expo web, then point `BR_APP_URL` on blackrabbitlawn.com.
+See **[`docs/DEPLOY.md`](docs/DEPLOY.md)**.
+
+**1. API (Render)** — [Deploy to Render](https://render.com/deploy?repo=https://github.com/jkillen5150/BlackRabbitLandscapingApp)  
+Set `XAI_API_KEY` in the Render dashboard (from https://console.x.ai).
+
+**2. Web (Vercel)** — [Import this repo on Vercel](https://vercel.com/new/clone?repository-url=https://github.com/jkillen5150/BlackRabbitLandscapingApp)  
+Set env: `EXPO_PUBLIC_API_URL=https://YOUR-RENDER-URL` (no trailing slash).
+
+**3. Marketing** — set `window.BR_APP_URL` to your Vercel URL.
 
 ### Free exchange (for now)
 

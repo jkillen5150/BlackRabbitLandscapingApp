@@ -1,7 +1,5 @@
-# Deploy backend on Render: https://render.com
-# 1. New → Blueprint → connect this repo
-# 2. Set env vars in the dashboard (never commit secrets)
-# 3. After API is live, deploy frontend on Vercel with EXPO_PUBLIC_API_URL
+# One-click: https://render.com/deploy?repo=https://github.com/jkillen5150/BlackRabbitLandscapingApp
+# Free web services sleep after idle; first request may be slow. No persistent disk on free.
 
 services:
   - type: web
@@ -9,6 +7,7 @@ services:
     runtime: python
     rootDir: backend
     plan: free
+    region: oregon
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /
@@ -22,8 +21,4 @@ services:
       - key: FRONTEND_URL
         sync: false
       - key: DATABASE_URL
-        value: sqlite:////var/data/blackrabbit.db
-    disk:
-      name: br-data
-      mountPath: /var/data
-      sizeGB: 1
+        value: sqlite:///./blackrabbit.db
