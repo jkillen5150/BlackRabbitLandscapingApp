@@ -23,7 +23,10 @@ from .schemas import review as review_schema
 from .schemas import user as user_schema
 from .routers.chat import router as chat_router
 
-load_dotenv()
+# Load backend/.env (and repo root) so XAI_API_KEY is found even if cwd differs
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(_BACKEND_DIR / ".env")
+load_dotenv(_BACKEND_DIR.parent / ".env")
 
 XAI_API_KEY = os.getenv("XAI_API_KEY", "")
 
