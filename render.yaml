@@ -1,5 +1,6 @@
-# One-click: https://render.com/deploy?repo=https://github.com/jkillen5150/BlackRabbitLandscapingApp
-# Free web services sleep after idle; first request may be slow.
+# Auto-deploys from GitHub when connected to Render
+# API: https://black-rabbit-api.onrender.com
+# Web: add static site "black-rabbit-web" (or use Vercel for site/)
 
 services:
   - type: web
@@ -15,6 +16,22 @@ services:
       - key: EMAIL_DEMO_MODE
         value: "true"
       - key: FRONTEND_URL
-        sync: false
+        value: https://brapp.vercel.app
       - key: DATABASE_URL
         value: sqlite:///./blackrabbit.db
+
+  - type: web
+    name: black-rabbit-web
+    runtime: static
+    rootDir: site
+    plan: free
+    buildCommand: "true"
+    staticPublishPath: .
+    headers:
+      - path: /sw.js
+        name: Cache-Control
+        value: public, max-age=0, must-revalidate
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

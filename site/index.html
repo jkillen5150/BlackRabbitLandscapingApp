@@ -135,10 +135,9 @@
 
   <div id="toast" class="toast hidden" role="status"></div>
 
-  <!-- Set your Render API URL before deploy (or leave for same-origin / query) -->
+  <!-- Production API (Render). Override with ?api=… if needed. -->
   <script>
-    // Production: set this to your Render URL (no trailing slash)
-    window.BR_API_URL = window.BR_API_URL || '';
+    window.BR_API_URL = window.BR_API_URL || 'https://black-rabbit-api.onrender.com';
   </script>
   <script src="./app.js" defer></script>
 </body>
